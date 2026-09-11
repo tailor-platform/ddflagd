@@ -715,11 +715,9 @@ func (p *scriptedProvider) ObjectEvaluation(ctx context.Context, flag string, de
 	res, ok := p.results[flag]
 	if !ok {
 		return openfeature.InterfaceResolutionDetail{
-			Value: defaultValue,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewFlagNotFoundResolutionError("flag not found"),
-				Reason:          openfeature.ErrorReason,
-			},
+			Value:           defaultValue,
+			ResolutionError: openfeature.NewFlagNotFoundResolutionError("flag not found"),
+			Reason:          openfeature.ErrorReason,
 		}
 	}
 	return res
