@@ -48,9 +48,8 @@ import (
 // a Pod in the same cluster.
 const readHeaderTimeout = 5 * time.Second
 
-// shutdownGrace keeps the wait for the termination sequence a little longer
-// than the sequence's own budget, so that an overrun is reported by the step
-// that overran rather than by the wait wrapped around it.
+// shutdownGrace is how much longer the wait for the termination sequence runs
+// than the sequence's own budget.
 const shutdownGrace = time.Second
 
 // newRootCmd builds the root command.
@@ -217,12 +216,26 @@ func run(cmd *cobra.Command, _ []string) error {
 	// One place to wait, whichever of the three reasons ends the process.
 	<-ctx.Done()
 
-	// The budget for the termination sequence starts here rather than at the
-	// call to Wait, because donegroup measures a timeout from when it is given,
-	// and the process may have been serving for days by now. The wait returns
-	// once the sequence and both listeners have finished, carrying whatever any
-	// of them reported.
-	return donegroup.WaitWithTimeout(ctx, cfg.DrainDelay+cfg.ShutdownTimeout+shutdownGrace)
+	// The wait is bounded because it covers the listener goroutines as well as
+	// the termination sequence, and nothing else bounds those: a listener that
+	// never returns from Shutdown would otherwise hold the process until
+	// Kubernetes kills it. The budget is built here, from a context that has had
+	// the cancellation stripped, for two reasons. The context that just ended
+	// cannot carry a deadline of its own any more, and donegroup measures a
+	// timeout from the moment it is handed one, so asking for the budget before
+	// the wait would spend it on however long the process had been serving.
+	//
+	// It exceeds the sequence's own ShutdownTimeout so that an overrun is
+	// reported by the step that overran rather than by the wait around it.
+	waitCtx, cancelWait := context.WithTimeout(
+		context.WithoutCancel(ctx),
+		cfg.DrainDelay+cfg.ShutdownTimeout+shutdownGrace,
+	)
+	defer cancelWait()
+
+	// Returns once the sequence and both listeners have finished, carrying
+	// whatever any of them reported.
+	return donegroup.WaitWithContext(ctx, waitCtx)
 }
 
 // shutdown runs the termination sequence.
