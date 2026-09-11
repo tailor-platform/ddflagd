@@ -1,0 +1,149 @@
+# ddflagd as a sidecar of the consuming application's Pod.
+#
+# This is an example, not a deployable manifest: the service name, the
+# namespace, the image reference and the Agent connection have to match the
+# environment it goes into. Read it together with the README.
+#
+# The evaluation listener stays on loopback, so nothing outside the Pod can
+# evaluate flags. Only the operational listener is bound to the Pod IP, because
+# kubelet performs an httpGet probe against the Pod IP and not against loopback.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-app
+  labels:
+    tags.datadoghq.com/service: example-app
+    tags.datadoghq.com/env: production
+    tags.datadoghq.com/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: example-app
+  template:
+    metadata:
+      labels:
+        app: example-app
+        # Unified Service Tagging. Both containers read these through fieldRef,
+        # so the identifiers are declared once.
+        tags.datadoghq.com/service: example-app
+        tags.datadoghq.com/env: production
+        tags.datadoghq.com/version: "1.0.0"
+      annotations:
+        # Let the Datadog Agent scrape ddflagd's own metrics. Drop this when
+        # the Pod already runs a collector sidecar that scrapes it instead.
+        ad.datadoghq.com/ddflagd.checks: |
+          {
+            "openmetrics": {
+              "init_config": {},
+              "instances": [
+                {
+                  "openmetrics_endpoint": "http://%%host%%:8017/metrics",
+                  "namespace": "ddflagd",
+                  "metrics": [".*"]
+                }
+              ]
+            }
+          }
+    spec:
+      # The grace period has to exceed DDFLAGD_DRAIN_DELAY plus
+      # DDFLAGD_SHUTDOWN_TIMEOUT, or the last exposure flush is cut off.
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        # A native sidecar (Kubernetes 1.29 or later): its startupProbe gates
+        # the application container, and it is stopped only after the
+        # application has exited, so the application's last evaluation still
+        # reaches Datadog. Without native sidecars, move this into containers
+        # and accept that evaluations before it is ready fall back to the
+        # caller's code defaults.
+        - name: ddflagd
+          image: ghcr.io/k1LoW/ddflagd:0.0.0 # pin by digest in production
+          restartPolicy: Always
+          env:
+            - name: DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED
+              value: "true"
+            # The identifiers of the consuming service, not of ddflagd: they
+            # are what the exposure events and the evaluation metrics are
+            # recorded under. They are passed through the environment because
+            # the evaluation metrics resolve them only from there.
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+            # The Unix socket is enabled by default in the Datadog Helm chart.
+            # For TCP instead, set datadog.apm.portEnabled and pass
+            # DD_AGENT_HOST from status.hostIP.
+            - name: DD_TRACE_AGENT_URL
+              value: unix:///var/run/datadog/apm.socket
+            # A sidecar has no Service endpoints to wait for, so there is
+            # nothing to drain.
+            - name: DDFLAGD_DRAIN_DELAY
+              value: "0s"
+          volumeMounts:
+            - name: dd-apm-socket
+              mountPath: /var/run/datadog
+              readOnly: true
+          ports:
+            - name: admin
+              containerPort: 8017
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: admin
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: admin
+            periodSeconds: 5
+          # Liveness deliberately ignores the Agent and the provider: an Agent
+          # outage must not restart ddflagd in a loop.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: admin
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: app
+          image: ghcr.io/example/example-app:1.0.0
+          env:
+            - name: DDFLAGD_URL
+              value: http://127.0.0.1:8016
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
+            - name: DD_ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/env']
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['tags.datadoghq.com/version']
+      volumes:
+        - name: dd-apm-socket
+          hostPath:
+            path: /var/run/datadog
+            type: Directory

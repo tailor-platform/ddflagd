@@ -1,0 +1,20 @@
+services:
+  # Datadog's own fake Agent, used by every tracer's CI. It advertises
+  # /v0.7/config so the tracer starts its Remote Configuration client, and it
+  # serves the flag configuration the e2e suite installs.
+  test-agent:
+    image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:v1.65.0
+    ports:
+      - "9126:8126"
+    environment:
+      LOG_LEVEL: INFO
+      SNAPSHOT_CI: "0"
+      DD_SUPPRESS_TRACE_PARSE_ERRORS: "true"
+      DD_POOL_TRACE_CHECK_FAILURES: "true"
+      DD_DISABLE_ERROR_RESPONSES: "true"
+      ENABLED_CHECKS: ""
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8126/info')"]
+      interval: 1s
+      timeout: 3s
+      retries: 30

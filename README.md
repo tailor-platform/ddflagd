@@ -1,0 +1,138 @@
+# ddflagd
+
+ddflagd lets a language without a Datadog Feature Flags SDK evaluate Datadog flags through the OpenFeature API. Rust is the first target.
+
+It is an [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) server that holds Datadog's official Go SDK. The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol. The name comes from the position it occupies for a provider, which is the one [flagd](https://flagd.dev/) occupies in its remote evaluation mode. ddflagd is not flagd: it speaks neither flagd's gRPC evaluation protocol nor its sync protocol, and has no in-process mode.
+
+```
+Rust application                     ddflagd (Go)                      Datadog Agent
+  open-feature          OFREP          OFREP server          RC          (node-local
+  + open-feature-ofrep  ──────▶        dd-trace-go       ──────▶          DaemonSet)
+                        HTTP/JSON      openfeature          EVP proxy
+                        127.0.0.1:8016 provider + tracer
+```
+
+## What you need on the application side
+
+Nothing from this project. A consuming application depends on the two official crates:
+
+```toml
+[dependencies]
+open-feature = { version = "0.3", default-features = false }
+open-feature-ofrep = "0.1"
+```
+
+```rust
+use std::time::Duration;
+use open_feature::{EvaluationContext, OpenFeature};
+use open_feature_ofrep::{OfrepOptions, OfrepProvider};
+
+let provider = OfrepProvider::new(OfrepOptions {
+    base_url: std::env::var("DDFLAGD_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:8016".into()),
+    connect_timeout: Duration::from_millis(50),
+    ..Default::default()
+})
+.await?;
+OpenFeature::singleton_mut().await.set_provider(provider).await;
+let client = OpenFeature::singleton().await.create_client();
+
+let ctx = EvaluationContext::default()
+    .with_targeting_key(tenant_id)
+    .with_custom_field("region", region);
+
+let enabled = tokio::time::timeout(
+    Duration::from_millis(250),
+    client.get_bool_value("new-query-planner", Some(&ctx), None),
+)
+.await
+.ok()                 // the timeout
+.and_then(Result::ok) // a connection failure, an unready bridge, a code default, a type mismatch
+.unwrap_or(false);
+```
+
+Three things are asked of the application, all of them within ordinary OpenFeature usage:
+
+- **Take the result with `unwrap_or(default)`.** An `Err` means a failure, an unready bridge, or a deliberate code default, and running on the default is correct in all three.
+- **Wrap the call in `tokio::time::timeout`.** `open-feature-ofrep` 0.1 has no overall request timeout, only a connect timeout. ddflagd bounds its own response time, so this covers the case where a connection stalls after it is established.
+- **Keep the evaluation context flat and primitive.** Datadog supports flat primitive attributes only. A nested field is stringified by the crate before it leaves the process, so it arrives at Datadog as a meaningless attribute and neither the crate nor ddflagd can catch it.
+
+Add `open_feature_ofrep=warn` to the `tracing` subscriber. The crate logs at error level for a code default and for a 503, both of which are normal.
+
+Any language with an OFREP provider can use the same bridge.
+
+## Running it
+
+The container image is `ghcr.io/k1LoW/ddflagd`, built for `linux/amd64` and `linux/arm64` with SLSA provenance and an SPDX SBOM attached. Verify it with `gh attestation verify`.
+
+Kubernetes manifests are in [`deploy/sidecar`](deploy/sidecar) and [`deploy/deployment`](deploy/deployment). Start with the sidecar; the Deployment layout trades the sidecar's isolation for independent deployment, and needs one Deployment per consuming service.
+
+### Configuration
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED` | required, `true` | Enables the official provider. Without it, the official constructor hands back a provider that evaluates nothing, so ddflagd refuses to start. |
+| `DD_SERVICE` | required | The **consuming** service's name. It is what the exposure events and the evaluation metrics are recorded under. |
+| `DD_ENV` / `DD_VERSION` | | The consuming service's environment and version. |
+| `DD_TRACE_AGENT_URL` | `http://localhost:8126` | The Agent. A Unix socket is `unix:///var/run/datadog/apm.socket`. `DD_AGENT_HOST` plus `DD_TRACE_AGENT_PORT` works too. |
+| `DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS` | `5` | How often the flag configuration is polled, which is most of the propagation delay of a flag change. |
+| `DD_METRICS_OTEL_ENABLED` | unset | Enables the `feature_flag.evaluations` metric. Needs `OTEL_EXPORTER_OTLP_ENDPOINT` to point at a collector or at the Agent's OTLP intake. |
+| `DD_FLAGGING_EVALUATION_COUNTS_ENABLED` | `true` | Sends evaluation counts to the Agent. |
+| `DD_APM_TRACING_ENABLED` | `false`, set by ddflagd | Runs the tracer as a transport for another product's data. An explicit setting is left alone. |
+| `DDFLAGD_LISTEN_ADDR` | `127.0.0.1:8016` | The evaluation listener. `0.0.0.0:8016` for a Deployment. |
+| `DDFLAGD_ADMIN_ADDR` | `0.0.0.0:8017` | The operational listener. Not loopback, because kubelet probes the Pod IP. |
+| `DDFLAGD_HANDLER_TIMEOUT` | `200ms` | Bounds one evaluation. Over it, 503. |
+| `DDFLAGD_INIT_TIMEOUT` | `30s` | How long to wait for the first flag configuration before exiting. |
+| `DDFLAGD_DRAIN_DELAY` | `5s` | After SIGTERM, how long to keep answering while readiness is already failing. `0s` for a sidecar. |
+| `DDFLAGD_SHUTDOWN_TIMEOUT` | `10s` | The budget for draining and the final telemetry flush. |
+| `DDFLAGD_API_KEY` | unset | When set, requires a matching `X-API-Key` on the evaluation listener. |
+| `DDFLAGD_PPROF_ENABLED` | `false` | Exposes `/debug/pprof` on the operational listener. |
+
+`DD_TRACE_ENABLED=false` is rejected: the tracer carries the Remote Configuration client that feeds the provider. `DD_APM_TRACING_ENABLED=false` is the setting that keeps APM data out, and it is the default here.
+
+### Endpoints
+
+The evaluation listener and the operational listener are separate on purpose. In a sidecar the evaluation listener is bound to loopback, while a kubelet `httpGet` probe arrives on the Pod IP; one listener would mean exposing evaluation to the Pod network just to be probed.
+
+| Listener | Path | Purpose |
+| --- | --- | --- |
+| evaluation, `8016` | `POST /ofrep/v1/evaluate/flags/{key}` | Single flag evaluation with a dynamic context. |
+| evaluation, `8016` | `POST /ofrep/v1/evaluate/flags` | Bulk evaluation. Answers 501: it carries a static context and targets client-side SDKs. |
+| operational, `8017` | `GET /healthz` | Liveness. Independent of the Agent and of the provider, so an Agent outage cannot cause a restart loop. |
+| operational, `8017` | `GET /readyz` | Readiness and startup. 200 once the provider holds a flag configuration and the process is not shutting down. |
+| operational, `8017` | `GET /metrics` | Prometheus format. |
+| operational, `8017` | `GET /debug/status` | Versions, state, evaluation counts by outcome, the last error, and the effective configuration with the shared secret redacted. |
+
+### Metrics
+
+| Metric | Type | Labels |
+| --- | --- | --- |
+| `ddflagd_evaluations_total` | counter | `outcome`: `value`, `code_default`, `flag_not_found`, `invalid_request`, `not_ready`, `timeout`, `error` |
+| `ddflagd_evaluation_duration_seconds` | histogram | `outcome` |
+| `ddflagd_provider_ready` | gauge | |
+| `ddflagd_provider_ready_timestamp_seconds` | gauge | |
+| `ddflagd_build_info` | gauge | `version`, `dd_trace_go_version` |
+
+`outcome` is the metric that matters. A caller cannot tell a deliberate code default from a failure, because `open-feature-ofrep` 0.1 reports both as an error, so the share of evaluations that fell back is monitored here rather than in the application.
+
+Configuration freshness is not exposed. The official provider keeps its configuration private and emits no events, so ddflagd cannot observe it; watch the Agent's Remote Configuration state and the Feature Flags UI instead.
+
+## Development
+
+```
+make test        # unit and contract tests
+make e2e         # e2e and conformance tests, against Datadog's fake Agent in docker
+make rust-test   # the official Rust crates against ddflagd
+make lint
+make build
+```
+
+`make e2e` runs a real ddflagd process against [`dd-apm-test-agent`](https://github.com/DataDog/dd-apm-test-agent), the fake Agent Datadog uses in every tracer's CI. It delivers the flag configuration over Remote Configuration and receives the exposure events, so nothing about either has to be reimplemented here, and no Datadog account is involved.
+
+The conformance suite runs every case of [`ffe-system-test-data`](https://github.com/DataDog/ffe-system-test-data), Datadog's cross-language evaluation fixtures, through OFREP. It is not a test of the evaluation logic, which belongs to the official SDK; it checks that the request conversion and the OFREP mapping preserve the value and the reason of every case. The submodule at `testdata/ffe-system-test-data` is pinned to the commit the dd-trace-go release under test pins, so the fixtures move with the SDK.
+
+`testdata/ofrep/openapi.yaml` is the OFREP OpenAPI document (version 0.3.0), vendored so the contract test is reproducible offline.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

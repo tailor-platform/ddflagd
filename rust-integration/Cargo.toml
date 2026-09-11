@@ -1,0 +1,22 @@
+[package]
+name = "ddflagd-rust-integration"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Pins what the official OpenFeature Rust crates do against a ddflagd OFREP server."
+
+# ddflagd ships no Rust code. This crate exists only to hold the integration
+# tests, which is why it has no library or binary target of its own.
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# The two crates a consuming application depends on, with the same settings the
+# README recommends: default-features off keeps the mockall based test-util
+# feature out of a production build.
+open-feature = { version = "0.3", default-features = false }
+open-feature-ofrep = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "process"] }

@@ -1,0 +1,144 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run lint
+        uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
+        with:
+          go_version_file: go.mod
+          cache: false
+          fail_level: warning
+
+      - name: Run gostyle
+        uses: k1LoW/gostyle-action@e1b847d37b3041c5fdb8b911bcf00b350779ca61 # v1.5.1
+        with:
+          config-file: .gostyle.yml
+          fail-on-error: true
+        env:
+          GOTOOLCHAIN: auto
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          go-version-input: ''
+          go-version-file: go.mod
+          repo-checkout: false
+          go-package: ./...
+
+      - name: Run tests
+        run: make ci
+
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
+        with:
+          scan-type: 'fs'
+
+      - name: Run octocov
+        uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2
+
+  e2e:
+    name: E2E and conformance
+    runs-on: ubuntu-latest
+    steps:
+      # The shared Datadog evaluation fixtures come in as a submodule and the
+      # conformance suite runs every case in them.
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Start the fake Datadog Agent
+        run: docker compose up -d --wait test-agent
+
+      - name: Run e2e and conformance tests
+        run: go test -tags e2e ./e2e/... -timeout 900s
+
+      - name: Show the fake Agent's logs
+        if: failure()
+        run: docker compose logs test-agent
+
+  rust-integration:
+    name: Rust integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+
+      - name: Run the Rust integration tests
+        run: make rust-test
+
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Building only for the host architecture is enough to catch a broken
+      # Dockerfile before a release tries to publish both.
+      - name: Build the image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ddflagd:ci
+
+      - name: Check that the image refuses to start without its service identifier
+        run: |
+          set +e
+          output=$(docker run --rm ddflagd:ci 2>&1)
+          status=$?
+          set -e
+          echo "$output"
+          if [ "$status" -eq 0 ]; then
+            echo "the image started without DD_SERVICE"
+            exit 1
+          fi
+          echo "$output" | grep -q DD_SERVICE

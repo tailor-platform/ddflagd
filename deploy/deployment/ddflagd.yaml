@@ -1,0 +1,183 @@
+# ddflagd as its own Deployment, one per consuming service.
+#
+# This is an example, not a deployable manifest. It trades the sidecar's
+# isolation for independent deployment: ddflagd can be updated without rolling
+# the application's Pods, and one Remote Configuration client serves every
+# caller of the service instead of one per Pod.
+#
+# One Deployment per consuming service is not a matter of taste. The exposure
+# events and the evaluation metrics carry DD_SERVICE, which is fixed per
+# process, and attaching several providers to one process is unsupported. A
+# shared ddflagd would report every service's flag usage under one name.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ddflagd-example-app
+  labels:
+    app: ddflagd
+    ddflagd.k1low.dev/consumer: example-app
+spec:
+  # Two or more: each replica receives the flag configuration independently, so
+  # there is no shared state to coordinate. Exposure deduplication is per
+  # replica, so the same subject can produce one exposure per replica.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ddflagd
+      ddflagd.k1low.dev/consumer: example-app
+  template:
+    metadata:
+      labels:
+        app: ddflagd
+        ddflagd.k1low.dev/consumer: example-app
+      annotations:
+        ad.datadoghq.com/ddflagd.checks: |
+          {
+            "openmetrics": {
+              "init_config": {},
+              "instances": [
+                {
+                  "openmetrics_endpoint": "http://%%host%%:8017/metrics",
+                  "namespace": "ddflagd",
+                  "metrics": [".*"]
+                }
+              ]
+            }
+          }
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ddflagd
+          image: ghcr.io/k1LoW/ddflagd:0.0.0 # pin by digest in production
+          env:
+            - name: DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED
+              value: "true"
+            # The identifiers of the consuming service. A Deployment cannot read
+            # the application's version from a Pod label, so the version tag on
+            # the exposure events is ddflagd's own release rather than the
+            # application's.
+            - name: DD_SERVICE
+              value: example-app
+            - name: DD_ENV
+              value: production
+            - name: DD_TRACE_AGENT_URL
+              value: unix:///var/run/datadog/apm.socket
+            # Reachable from the consuming Pods, which is what the
+            # NetworkPolicy below then narrows down.
+            - name: DDFLAGD_LISTEN_ADDR
+              value: 0.0.0.0:8016
+            # Keep answering while the Service endpoint removal propagates.
+            - name: DDFLAGD_DRAIN_DELAY
+              value: "5s"
+            # An evaluation crosses the network here, so allow more than the
+            # loopback default.
+            - name: DDFLAGD_HANDLER_TIMEOUT
+              value: "500ms"
+            - name: DDFLAGD_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ddflagd-example-app
+                  key: api-key
+          volumeMounts:
+            - name: dd-apm-socket
+              mountPath: /var/run/datadog
+              readOnly: true
+          ports:
+            - name: ofrep
+              containerPort: 8016
+            - name: admin
+              containerPort: 8017
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: admin
+            periodSeconds: 1
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: admin
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: admin
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: dd-apm-socket
+          hostPath:
+            path: /var/run/datadog
+            type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ddflagd-example-app
+spec:
+  selector:
+    app: ddflagd
+    ddflagd.k1low.dev/consumer: example-app
+  # Only the evaluation listener is published. The operational listener stays
+  # reachable on the Pod IP for kubelet and for metric scraping.
+  ports:
+    - name: ofrep
+      port: 8016
+      targetPort: ofrep
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ddflagd-example-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ddflagd
+      ddflagd.k1low.dev/consumer: example-app
+---
+# ddflagd sends the caller's evaluation attributes to Datadog as exposure
+# events, so restricting who can evaluate is part of restricting what ends up
+# there. The shared secret is a second layer, not the first one.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ddflagd-example-app
+spec:
+  podSelector:
+    matchLabels:
+      app: ddflagd
+      ddflagd.k1low.dev/consumer: example-app
+  policyTypes:
+    - Ingress
+  ingress:
+    # Evaluation: only the consuming service.
+    - from:
+        - podSelector:
+            matchLabels:
+              app: example-app
+      ports:
+        - protocol: TCP
+          port: 8016
+    # Operations: the monitoring namespace. kubelet probes arrive from the node
+    # and are not covered by a podSelector, so the cluster's own policy for
+    # health checks applies to them.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8017
