@@ -10,6 +10,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -64,7 +65,17 @@ func run(m *testing.M) (code int) {
 		setupErr = err
 		return runWithSetupError(m)
 	}
-	defer func() { stopAgent(code != 0) }()
+	// A container left behind is the thing this suite promises not to do, so a
+	// teardown that could not remove it fails the run, the way the bridge's
+	// does below.
+	defer func() {
+		if err := stopAgent(code != 0); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			if code == 0 {
+				code = 1
+			}
+		}
+	}()
 	testAgent = agent
 
 	if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {

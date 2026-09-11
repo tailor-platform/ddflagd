@@ -34,7 +34,8 @@ const teardownTimeout = time.Minute
 
 // StartTestAgent brings up the fake Agent and returns a client for it, along
 // with the function that stops it. That function takes whether the suite
-// failed, and prints the container's logs before termination when it did: a
+// failed, reports whether the container could be removed, and prints the
+// container's logs before termination when the suite failed: a
 // Remote Configuration or trace ingestion problem shows up on the Agent's side,
 // not on the bridge's, and nothing else in the suite would report it.
 //
@@ -44,7 +45,7 @@ const teardownTimeout = time.Minute
 // the tests are over. Setting DDFLAGD_TEST_AGENT_URL skips the container and
 // uses the Agent at that address, which keeps a local edit loop off the
 // container start altogether.
-func StartTestAgent(ctx context.Context) (*TestAgent, func(failed bool), error) {
+func StartTestAgent(ctx context.Context) (*TestAgent, func(failed bool) error, error) {
 	if url := os.Getenv(envTestAgentURL); url != "" {
 		agent := NewTestAgent(url)
 		if err := agent.WaitReady(ctx); err != nil {
@@ -52,7 +53,7 @@ func StartTestAgent(ctx context.Context) (*TestAgent, func(failed bool), error) 
 		}
 		// The Agent belongs to whoever started it, so the suite neither stops
 		// it nor reads its logs.
-		return agent, func(bool) {}, nil
+		return agent, func(bool) error { return nil }, nil
 	}
 
 	container, err := testcontainers.Run(ctx, testAgentImage,
@@ -76,7 +77,7 @@ func StartTestAgent(ctx context.Context) (*TestAgent, func(failed bool), error) 
 				WithStatusCodeMatcher(func(status int) bool { return status == http.StatusOK }),
 		),
 	)
-	stop := func(failed bool) {
+	stop := func(failed bool) error {
 		// Teardown runs on a budget of its own. The context handed in bounds
 		// the suite's setup, and by the time anything stops it has usually
 		// expired.
@@ -90,20 +91,28 @@ func StartTestAgent(ctx context.Context) (*TestAgent, func(failed bool), error) 
 		if failed && container != nil {
 			printAgentLogs(stopCtx, container)
 		}
-		if err := testcontainers.TerminateContainer(container); err != nil {
-			fmt.Fprintf(os.Stderr, "terminating the fake Agent: %v\n", err)
+		// StopContext is what puts termination on the same budget. Without it
+		// TerminateContainer uses a background context of its own, and a
+		// stalled Docker daemon would hold the suite open indefinitely.
+		if err := testcontainers.TerminateContainer(container, testcontainers.StopContext(stopCtx)); err != nil {
+			return fmt.Errorf("terminating the fake Agent: %w", err)
 		}
+		return nil
 	}
 	if err != nil {
 		// A container that never became ready is exactly the case its logs
 		// explain, so they are printed even though no test has run yet.
-		stop(true)
+		if stopErr := stop(true); stopErr != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", stopErr)
+		}
 		return nil, nil, fmt.Errorf("starting the fake Agent: %w", err)
 	}
 
 	endpoint, err := container.PortEndpoint(ctx, agentPort, "http")
 	if err != nil {
-		stop(true)
+		if stopErr := stop(true); stopErr != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", stopErr)
+		}
 		return nil, nil, fmt.Errorf("resolving the fake Agent's address: %w", err)
 	}
 	return NewTestAgent(endpoint), stop, nil
