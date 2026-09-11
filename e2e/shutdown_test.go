@@ -44,6 +44,9 @@ func TestShutdownSequence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting a bridge to terminate: %v", err)
 	}
+	// A failure below ends the test before it stops the process, and TestMain
+	// only terminates the shared bridge.
+	t.Cleanup(victim.Stop)
 	if err := victim.WaitReady(ctx); err != nil {
 		t.Fatalf("waiting for the bridge: %v", err)
 	}
@@ -142,9 +145,18 @@ func TestAListenerThatCannotBindEndsTheProcess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("starting a bridge on a taken address: %v", err)
 	}
+	// A failure below ends the test before it stops the process, and TestMain
+	// only terminates the shared bridge.
+	t.Cleanup(victim.Stop)
 
-	if err := victim.WaitExit(30 * time.Second); err == nil {
+	exited, exitErr := victim.WaitExit(30 * time.Second)
+	switch {
+	case !exited:
+		// This is the regression the test exists to catch, so it has to fail
+		// here rather than fall through to the assertions below.
 		t.Fatalf("the process kept running with no evaluation listener\n%s", victim.Logs())
+	case exitErr == nil:
+		t.Fatalf("the process exited cleanly with no evaluation listener\n%s", victim.Logs())
 	}
 	if logs := victim.Logs(); !strings.Contains(logs, taken) {
 		t.Errorf("the logs do not name the address that could not be bound (%s):\n%s", taken, logs)
