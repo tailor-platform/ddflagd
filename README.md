@@ -1,8 +1,8 @@
 # ddflagd
 
-ddflagd lets a language without a Datadog Feature Flags SDK evaluate Datadog flags through the OpenFeature API. Rust is the first target.
+ddflagd is an OpenFeature daemon that lets any language evaluate Datadog Feature Flags, backed by Datadog's official Go SDK. Rust is the first target.
 
-It is an [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) server that holds Datadog's official Go SDK. The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol.
+The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol the caller arrives on, which today is [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/).
 
 ```mermaid
 flowchart LR

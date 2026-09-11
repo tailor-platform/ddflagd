@@ -56,13 +56,13 @@ const readHeaderTimeout = 5 * time.Second
 func newRootCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   version.Name,
-		Short: "ddflagd serves Datadog Feature Flags over the OpenFeature Remote Evaluation Protocol",
-		Long: `ddflagd serves Datadog Feature Flags over OFREP, so that a language without a
-Datadog SDK can evaluate Datadog flags through the OpenFeature API.
+		Short: "ddflagd is an OpenFeature daemon for Datadog Feature Flags",
+		Long: `ddflagd is an OpenFeature daemon that lets any language evaluate Datadog Feature
+Flags, backed by Datadog's official Go SDK.
 
-It holds Datadog's official Go SDK: the flag configuration, the evaluation and
-the telemetry all stay inside that SDK, and ddflagd converts between it and the
-protocol. A caller uses its language's OFREP provider unchanged.
+The flag configuration, the evaluation and the telemetry all stay inside that
+SDK, and ddflagd converts between it and the protocol the caller arrives on,
+which today is OFREP. A caller uses its language's OFREP provider unchanged.
 
   ddflagd                    Run the bridge, configured by the environment
 
