@@ -205,6 +205,17 @@ func (b *Bridge) Get(ctx context.Context, path string) (int, map[string]any, err
 	return b.getJSON(ctx, b.AdminURL()+path)
 }
 
+// WaitExit blocks until the process exits on its own, and reports how it did.
+func (b *Bridge) WaitExit(timeout time.Duration) error {
+	select {
+	case err := <-b.exited:
+		b.exitStatus = err
+		return err
+	case <-time.After(timeout):
+		return fmt.Errorf("the process was still running after %s", timeout)
+	}
+}
+
 // Terminate sends SIGTERM and waits for the process to exit, which is the
 // shutdown sequence a Kubernetes Pod termination triggers.
 func (b *Bridge) Terminate(timeout time.Duration) error {

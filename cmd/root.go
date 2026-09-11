@@ -32,6 +32,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/k1LoW/donegroup"
 	"github.com/spf13/cobra"
 
 	"github.com/k1LoW/ddflagd/internal/admin"
@@ -46,6 +47,11 @@ import (
 // headers. It is short because every caller is either a sidecar on loopback or
 // a Pod in the same cluster.
 const readHeaderTimeout = 5 * time.Second
+
+// shutdownGrace keeps the wait for the termination sequence a little longer
+// than the sequence's own budget, so that an overrun is reported by the step
+// that overran rather than by the wait wrapped around it.
+const shutdownGrace = time.Second
 
 // newRootCmd builds the root command.
 //
@@ -126,12 +132,20 @@ func run(cmd *cobra.Command, _ []string) error {
 		slog.String("admin_addr", cfg.AdminAddr),
 	)
 
-	// The signal context is installed before the provider is created so that a
+	// Three things end this process: a termination signal, a listener that
+	// cannot serve, and a provider that never receives a flag configuration.
+	// They all become the cancellation of one context, so that the rest of the
+	// function has a single thing to wait on.
+	//
+	// The signal context is installed before the provider is created, so that a
 	// SIGTERM during a slow provider startup is not lost.
 	signalCtx, stopSignals := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSignals()
 
-	b, err := bridge.New(signalCtx, bridge.Options{Config: cfg, Logger: logger, Metrics: m})
+	ctx, cancel := donegroup.WithCancelCause(signalCtx)
+	defer cancel(nil)
+
+	b, err := bridge.New(ctx, bridge.Options{Config: cfg, Logger: logger, Metrics: m})
 	if err != nil {
 		return err
 	}
@@ -167,46 +181,48 @@ func run(cmd *cobra.Command, _ []string) error {
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
-	// Both listeners come up before the first flag configuration arrives, so
-	// that the probes can answer while the provider is still starting.
-	serveErrs := make(chan error, 2)
-	for _, s := range []*http.Server{adminServer, evalServer} {
-		go func(s *http.Server) {
-			if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				serveErrs <- fmt.Errorf("listening on %s: %w", s.Addr, err)
-			}
-		}(s)
+	// The termination sequence is the context's cleanup, which is what it is:
+	// the work that has to happen once the process is on its way out, whichever
+	// of the three reasons ended it.
+	if err := donegroup.Cleanup(ctx, func() error {
+		return shutdown(ctx, logger, cfg, b, ofrepHandler, evalServer, adminServer)
+	}); err != nil {
+		return err
 	}
 
-	initErrs := make(chan error, 1)
-	go func() {
-		initErrs <- b.Start(signalCtx)
-	}()
+	// Both listeners come up before the first flag configuration arrives, so
+	// that the probes can answer while the provider is still starting.
+	for _, s := range []*http.Server{adminServer, evalServer} {
+		donegroup.Go(ctx, func() error {
+			if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				err = fmt.Errorf("listening on %s: %w", s.Addr, err)
+				cancel(err)
+				return err
+			}
+			return nil
+		})
+	}
 
-	var runErr error
-	select {
-	case err := <-serveErrs:
-		runErr = err
-	case err := <-initErrs:
-		if err != nil {
+	donegroup.Go(ctx, func() error {
+		if err := b.Start(ctx); err != nil {
 			// Exiting lets Kubernetes restart the container, which is the only
 			// thing that can recover from an Agent that never delivered a
 			// configuration.
-			runErr = err
-		} else {
-			select {
-			case err := <-serveErrs:
-				runErr = err
-			case <-signalCtx.Done():
-				logger.Info("received a termination signal")
-			}
+			cancel(err)
+			return err
 		}
-	case <-signalCtx.Done():
-		logger.Info("received a termination signal during startup")
-	}
+		return nil
+	})
 
-	shutdownErr := shutdown(logger, cfg, b, ofrepHandler, evalServer, adminServer)
-	return errors.Join(runErr, shutdownErr)
+	// One place to wait, whichever of the three reasons ends the process.
+	<-ctx.Done()
+
+	// The budget for the termination sequence starts here rather than at the
+	// call to Wait, because donegroup measures a timeout from when it is given,
+	// and the process may have been serving for days by now. The wait returns
+	// once the sequence and both listeners have finished, carrying whatever any
+	// of them reported.
+	return donegroup.WaitWithTimeout(ctx, cfg.DrainDelay+cfg.ShutdownTimeout+shutdownGrace)
 }
 
 // shutdown runs the termination sequence.
@@ -216,9 +232,11 @@ func run(cmd *cobra.Command, _ []string) error {
 // endpoint update has propagated. The provider is shut down only after the
 // listener has drained, since that shutdown is what flushes the last exposure
 // events and evaluation counts.
-func shutdown(logger *slog.Logger, cfg *bridge.Config, b *bridge.Bridge, ofrepHandler *ofrep.Handler, evalServer, adminServer *http.Server) error {
+func shutdown(ctx context.Context, logger *slog.Logger, cfg *bridge.Config, b *bridge.Bridge, ofrepHandler *ofrep.Handler, evalServer, adminServer *http.Server) error {
 	b.BeginShutdown()
-	logger.Info("draining", slog.String("drain_delay", cfg.DrainDelay.String()))
+	logger.Info("draining",
+		slog.String("cause", shutdownCause(ctx)),
+		slog.String("drain_delay", cfg.DrainDelay.String()))
 
 	// The drain delay is not part of the shutdown budget: it is time spent
 	// answering requests normally, not time spent stopping.
@@ -227,7 +245,9 @@ func shutdown(logger *slog.Logger, cfg *bridge.Config, b *bridge.Bridge, ofrepHa
 	}
 	ofrepHandler.StopServing()
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	// The sequence runs on its own deadline rather than on the context that
+	// just ended, which is already canceled.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), cfg.ShutdownTimeout)
 	defer cancel()
 
 	var errs []error
@@ -242,4 +262,14 @@ func shutdown(logger *slog.Logger, cfg *bridge.Config, b *bridge.Bridge, ofrepHa
 	}
 	logger.Info("stopped")
 	return errors.Join(errs...)
+}
+
+// shutdownCause names why the process is stopping. A signal leaves the plain
+// cancellation behind, so anything else is a failure worth naming in the log.
+func shutdownCause(ctx context.Context) string {
+	cause := context.Cause(ctx)
+	if cause == nil || errors.Is(cause, context.Canceled) {
+		return "a termination signal"
+	}
+	return cause.Error()
 }
