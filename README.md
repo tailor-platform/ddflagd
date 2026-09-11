@@ -14,7 +14,17 @@ Rust application                     ddflagd (Go)                      Datadog A
 
 ## What you need on the application side
 
-Nothing from this project. A consuming application depends on the two official crates:
+Nothing from this project. ddflagd speaks OFREP, so a caller uses whatever OFREP provider its language already has, configured with the bridge's address and otherwise untouched.
+
+Three things are asked of the caller, and all of them hold whatever the language is:
+
+- **Treat an error as "use the value in my own code".** A provider reports a failure, an unready bridge, and a deliberate code default the same way, and running on the code default is correct in all three.
+- **Bound the call yourself if the provider does not.** ddflagd bounds its own response time, but that does not cover a connection that stalls after it is established, and not every OFREP provider has an overall request timeout.
+- **Keep the evaluation context flat and primitive.** Datadog supports flat primitive attributes only. A nested field typically reaches the wire as whatever the provider decided to stringify it into, so it arrives at Datadog as a meaningless attribute that neither the provider nor ddflagd can catch.
+
+### For example, in Rust
+
+The two official crates, and nothing else:
 
 ```toml
 [dependencies]
@@ -51,15 +61,11 @@ let enabled = tokio::time::timeout(
 .unwrap_or(false);
 ```
 
-Three things are asked of the application, all of them within ordinary OpenFeature usage:
+Where the three promises land here: `unwrap_or(false)` is the first, `tokio::time::timeout` is the second, since `open-feature-ofrep` 0.1 configures only a connect timeout, and `EvaluationContextFieldValue::Struct` is what the third rules out, because the crate sends it as its debug form.
 
-- **Take the result with `unwrap_or(default)`.** An `Err` means a failure, an unready bridge, or a deliberate code default, and running on the default is correct in all three.
-- **Wrap the call in `tokio::time::timeout`.** `open-feature-ofrep` 0.1 has no overall request timeout, only a connect timeout. ddflagd bounds its own response time, so this covers the case where a connection stalls after it is established.
-- **Keep the evaluation context flat and primitive.** Datadog supports flat primitive attributes only. A nested field is stringified by the crate before it leaves the process, so it arrives at Datadog as a meaningless attribute and neither the crate nor ddflagd can catch it.
+One more thing specific to this crate: add `open_feature_ofrep=warn` to the `tracing` subscriber. It logs at error level for a code default and for a 503, both of which are normal here.
 
-Add `open_feature_ofrep=warn` to the `tracing` subscriber. The crate logs at error level for a code default and for a 503, both of which are normal.
-
-Any language with an OFREP provider can use the same bridge.
+`rust-integration/` pins all of this against a running ddflagd, so a crate update that changes any of it is caught there.
 
 ## Running it
 
