@@ -200,6 +200,14 @@ func run(cmd *cobra.Command, _ []string) error {
 
 	donegroup.Go(ctx, func() error {
 		if err := b.Start(ctx); err != nil {
+			// A startup cut short by the process already stopping is not a
+			// failure. Only the root context's state tells the two apart: a
+			// signal cancels it, while an Agent that never delivered a
+			// configuration trips DDFLAGD_INIT_TIMEOUT on a context of Start's
+			// own and leaves this one alive.
+			if ctx.Err() != nil {
+				return nil
+			}
 			// Exiting lets Kubernetes restart the container, which is the only
 			// thing that can recover from an Agent that never delivered a
 			// configuration.
