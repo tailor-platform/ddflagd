@@ -12,9 +12,9 @@ ci: depsdev test
 test:
 	go test ./... -coverprofile=coverage.out -covermode=count
 
-# e2e needs the fake Agent, so it is kept out of the default test run.
+# e2e starts the fake Agent itself and needs a Docker daemon, so it is kept out
+# of the default test run.
 e2e:
-	docker compose up -d --wait test-agent
 	go test -tags e2e ./e2e/... -timeout 900s
 
 # The Rust tests point the official crates at ddflagd, so they need the stub

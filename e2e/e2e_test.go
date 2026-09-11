@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	defaultTestAgentURL = "http://127.0.0.1:9126"
-	ufcPath             = "../testdata/ffe-system-test-data/ufc-config.json"
+	ufcPath = "../testdata/ffe-system-test-data/ufc-config.json"
 
 	service        = "ddflagd-e2e-service"
 	environment    = "e2e"
@@ -28,11 +27,11 @@ const (
 )
 
 var (
-	bridge   *Bridge
-	proxy    *AgentProxy
-	agent    *TestAgent
-	ufc      json.RawMessage
-	setupErr error
+	bridge    *Bridge
+	proxy     *AgentProxy
+	testAgent *TestAgent
+	ufc       json.RawMessage
+	setupErr  error
 )
 
 func TestMain(m *testing.M) {
@@ -58,21 +57,20 @@ func run(m *testing.M) int {
 	}
 	ufc = json.RawMessage(raw)
 
-	agentURL := os.Getenv("DDFLAGD_TEST_AGENT_URL")
-	if agentURL == "" {
-		agentURL = defaultTestAgentURL
-	}
-	agent = NewTestAgent(agentURL)
-	if err := agent.WaitReady(ctx); err != nil {
+	agent, stopAgent, err := StartTestAgent(ctx)
+	if err != nil {
 		setupErr = err
 		return runWithSetupError(m)
 	}
-	if err := agent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
+	defer stopAgent()
+	testAgent = agent
+
+	if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
 		setupErr = err
 		return runWithSetupError(m)
 	}
 
-	proxy, err = NewAgentProxy(agentURL)
+	proxy, err = NewAgentProxy(testAgent.URL())
 	if err != nil {
 		setupErr = err
 		return runWithSetupError(m)
@@ -124,7 +122,7 @@ func runWithSetupError(m *testing.M) int {
 func requireSetup(t *testing.T) {
 	t.Helper()
 	if setupErr != nil {
-		t.Fatalf("the e2e environment is not available: %v\nStart it with: docker compose up -d test-agent", setupErr)
+		t.Fatalf("the e2e environment is not available: %v", setupErr)
 	}
 }
 
@@ -395,13 +393,13 @@ func TestFlagConfigurationUpdateIsPickedUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := agent.SetFlagConfiguration(t.Context(), primaryConfigID, updated); err != nil {
+	if err := testAgent.SetFlagConfiguration(t.Context(), primaryConfigID, updated); err != nil {
 		t.Fatalf("installing the updated configuration: %v", err)
 	}
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if err := agent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
+		if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
 			t.Errorf("restoring the configuration: %v", err)
 			return
 		}

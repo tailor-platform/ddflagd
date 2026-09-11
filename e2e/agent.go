@@ -33,14 +33,20 @@ func NewTestAgent(baseURL string) *TestAgent {
 	return &TestAgent{baseURL: baseURL, client: &http.Client{Timeout: 10 * time.Second}}
 }
 
+// URL is the base URL of the test agent.
+func (a *TestAgent) URL() string { return a.baseURL }
+
 // WaitReady blocks until the test agent answers /info.
 func (a *TestAgent) WaitReady(ctx context.Context) error {
 	return waitFor(ctx, time.Second, func() error {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.baseURL+"/info", nil)
+		// The address is either a container this suite started or one the
+		// developer named in DDFLAGD_TEST_AGENT_URL, so there is no untrusted
+		// input to reach.
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.baseURL+"/info", nil) //nolint:gosec // G704
 		if err != nil {
 			return err
 		}
-		res, err := a.client.Do(req)
+		res, err := a.client.Do(req) //nolint:gosec // G704
 		if err != nil {
 			return err
 		}

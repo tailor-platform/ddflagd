@@ -135,7 +135,7 @@ make lint
 make build
 ```
 
-`make e2e` runs a real ddflagd process against [`dd-apm-test-agent`](https://github.com/DataDog/dd-apm-test-agent), the fake Agent Datadog uses in every tracer's CI. It delivers the flag configuration over Remote Configuration and receives the exposure events, so nothing about either has to be reimplemented here, and no Datadog account is involved.
+`make e2e` runs a real ddflagd process against [`dd-apm-test-agent`](https://github.com/DataDog/dd-apm-test-agent), the fake Agent Datadog uses in every tracer's CI. It delivers the flag configuration over Remote Configuration and receives the exposure events, so nothing about either has to be reimplemented here, and no Datadog account is involved. The suite starts the container itself through testcontainers, so a Docker daemon is the only prerequisite; set `DDFLAGD_TEST_AGENT_URL` to point it at an Agent you are already running instead.
 
 The conformance suite runs every case of [`ffe-system-test-data`](https://github.com/DataDog/ffe-system-test-data), Datadog's cross-language evaluation fixtures, through OFREP. It is not a test of the evaluation logic, which belongs to the official SDK; it checks that the request conversion and the OFREP mapping preserve the value and the reason of every case.
 

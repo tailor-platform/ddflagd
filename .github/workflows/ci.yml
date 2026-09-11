@@ -79,15 +79,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Start the fake Datadog Agent
-        run: docker compose up -d --wait test-agent
-
+      # The suite starts the fake Agent itself, so there is nothing to bring up
+      # here and nothing left running afterwards.
       - name: Run e2e and conformance tests
         run: go test -tags e2e ./e2e/... -timeout 900s
-
-      - name: Show the fake Agent's logs
-        if: failure()
-        run: docker compose logs test-agent
 
   rust-integration:
     name: Rust integration
