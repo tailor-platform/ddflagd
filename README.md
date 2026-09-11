@@ -2,7 +2,7 @@
 
 ddflagd lets a language without a Datadog Feature Flags SDK evaluate Datadog flags through the OpenFeature API. Rust is the first target.
 
-It is an [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) server that holds Datadog's official Go SDK. The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol. The name comes from the position it occupies for a provider, which is the one [flagd](https://flagd.dev/) occupies in its remote evaluation mode. ddflagd is not flagd: it speaks neither flagd's gRPC evaluation protocol nor its sync protocol, and has no in-process mode.
+It is an [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) server that holds Datadog's official Go SDK. The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol.
 
 ```
 Rust application                     ddflagd (Go)                      Datadog Agent
