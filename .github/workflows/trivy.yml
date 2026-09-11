@@ -26,8 +26,17 @@ jobs:
 
       # Only licenses. Go vulnerabilities are govulncheck's job in the build
       # workflow, and it reports whether the vulnerable code is actually called.
+      #
+      # MPL-2.0 is accepted. It reaches ddflagd as github.com/hashicorp/go-version,
+      # transitively through dd-trace-go, and its reciprocity is per file: a
+      # binary that links it may be distributed, and the obligation is to publish
+      # modifications to the MPL licensed files themselves, which ddflagd makes
+      # none of. It is named rather than waved through by dropping MEDIUM from the
+      # severity list, so that any other reciprocal license still fails the build.
       - name: Run trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
+        env:
+          TRIVY_IGNORED_LICENSES: MPL-2.0
         with:
           scan-type: 'fs'
           scanners: 'license'
