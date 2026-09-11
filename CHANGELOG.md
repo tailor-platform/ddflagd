@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.0.2](https://github.com/k1LoW/ddflagd/compare/v0.0.1...v0.0.2) - 2026-09-11
+
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/moby/go-archive from 0.2.0 to 0.3.0 by @dependabot[bot] in https://github.com/k1LoW/ddflagd/pull/10
+### Other Changes
+- ci: give syft and the attestations a reference they can parse by @k1LoW in https://github.com/k1LoW/ddflagd/pull/8
+- test: let the e2e suite start the fake Agent itself by @k1LoW in https://github.com/k1LoW/ddflagd/pull/7
+
 ## [v0.0.1](https://github.com/k1LoW/ddflagd/commits/v0.0.1) - 2026-09-11
 
 ### Dependency Updates ⬆️
