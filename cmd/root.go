@@ -48,10 +48,6 @@ import (
 // a Pod in the same cluster.
 const readHeaderTimeout = 5 * time.Second
 
-// shutdownGrace is how much longer the wait for the termination sequence runs
-// than the sequence's own budget.
-const shutdownGrace = time.Second
-
 // newRootCmd builds the root command.
 //
 // A command is built per call rather than kept in a package variable, because
@@ -213,29 +209,16 @@ func run(cmd *cobra.Command, _ []string) error {
 		return nil
 	})
 
-	// One place to wait, whichever of the three reasons ends the process.
-	<-ctx.Done()
-
-	// The wait is bounded because it covers the listener goroutines as well as
-	// the termination sequence, and nothing else bounds those: a listener that
-	// never returns from Shutdown would otherwise hold the process until
-	// Kubernetes kills it. The budget is built here, from a context that has had
-	// the cancellation stripped, for two reasons. The context that just ended
-	// cannot carry a deadline of its own any more, and donegroup measures a
-	// timeout from the moment it is handed one, so asking for the budget before
-	// the wait would spend it on however long the process had been serving.
+	// One place to wait. It returns once the context has ended, for whichever
+	// of the three reasons, and the termination sequence and both listeners
+	// have finished, carrying whatever any of them reported.
 	//
-	// It exceeds the sequence's own ShutdownTimeout so that an overrun is
-	// reported by the step that overran rather than by the wait around it.
-	waitCtx, cancelWait := context.WithTimeout(
-		context.WithoutCancel(ctx),
-		cfg.DrainDelay+cfg.ShutdownTimeout+shutdownGrace,
-	)
-	defer cancelWait()
-
-	// Returns once the sequence and both listeners have finished, carrying
-	// whatever any of them reported.
-	return donegroup.WaitWithContext(ctx, waitCtx)
+	// Nothing wraps a deadline around it. The sequence bounds every step it
+	// takes with DDFLAGD_SHUTDOWN_TIMEOUT, and a listener returns as soon as
+	// Shutdown closes it rather than when Shutdown finishes, so an outer
+	// deadline would only ever fire on a hang it could not name. The Pod's
+	// terminationGracePeriodSeconds is the backstop for that.
+	return donegroup.Wait(ctx)
 }
 
 // shutdown runs the termination sequence.
