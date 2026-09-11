@@ -75,6 +75,50 @@ The container image is `ghcr.io/k1LoW/ddflagd`, built for `linux/amd64` and `lin
 
 Kubernetes manifests are in [`deploy/sidecar`](deploy/sidecar) and [`deploy/deployment`](deploy/deployment). Start with the sidecar; the Deployment layout trades the sidecar's isolation for independent deployment, and needs one Deployment per consuming service.
 
+In the sidecar layout the evaluation listener never leaves the Pod, and only the operational listener is bound to the Pod IP, because a kubelet `httpGet` probe arrives there and not on loopback.
+
+```mermaid
+flowchart LR
+    kubelet(["kubelet"])
+
+    subgraph pod["application Pod"]
+        app["app container"]
+        ddflagd["ddflagd<br>native sidecar"]
+    end
+
+    agent["Datadog Agent<br>node-local DaemonSet"]
+
+    app -->|"127.0.0.1:8016<br>OFREP"| ddflagd
+    kubelet -->|"PodIP:8017<br>/readyz /healthz"| ddflagd
+    ddflagd -->|"apm.socket<br>RC + exposures"| agent
+```
+
+The Deployment layout moves the evaluation listener onto the Pod network, published through a Service; the operational listener stays on the Pod IP, unpublished, for kubelet and for metric scraping.
+
+```mermaid
+flowchart LR
+    kubelet(["kubelet"])
+    scrape(["metric scrape<br>monitoring namespace"])
+
+    subgraph apppod["application Pod"]
+        app["app container"]
+    end
+
+    svc{{"Service :8016"}}
+
+    subgraph ddpod["ddflagd Pod, one Deployment per service"]
+        ddflagd["ddflagd"]
+    end
+
+    agent["Datadog Agent<br>node-local DaemonSet"]
+
+    app -->|"OFREP<br>X-API-Key"| svc
+    svc -->|"0.0.0.0:8016"| ddflagd
+    kubelet -->|"PodIP:8017<br>/readyz /healthz"| ddflagd
+    scrape -->|"PodIP:8017<br>/metrics"| ddflagd
+    ddflagd -->|"apm.socket<br>RC + exposures"| agent
+```
+
 `ddflagd --help` prints the same configuration summary, and `ddflagd --version` reports the release. There are no configuration flags: the `DD_` variables are read by the official SDK itself, and a flag alongside them would make the effective configuration depend on which of the two won.
 
 ### Configuration
