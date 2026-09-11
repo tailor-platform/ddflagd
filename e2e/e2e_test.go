@@ -39,7 +39,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func run(m *testing.M) int {
+// run returns through a named result so that the deferred teardown can see
+// whether the suite failed.
+func run(m *testing.M) (code int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
@@ -62,7 +64,7 @@ func run(m *testing.M) int {
 		setupErr = err
 		return runWithSetupError(m)
 	}
-	defer stopAgent()
+	defer func() { stopAgent(code != 0) }()
 	testAgent = agent
 
 	if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
@@ -101,7 +103,7 @@ func run(m *testing.M) int {
 		return code
 	}
 
-	code := m.Run()
+	code = m.Run()
 
 	if err := bridge.Terminate(20 * time.Second); err != nil {
 		// A non-zero exit here means the shutdown sequence did not complete,
