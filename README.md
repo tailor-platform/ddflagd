@@ -67,6 +67,8 @@ The container image is `ghcr.io/k1LoW/ddflagd`, built for `linux/amd64` and `lin
 
 Kubernetes manifests are in [`deploy/sidecar`](deploy/sidecar) and [`deploy/deployment`](deploy/deployment). Start with the sidecar; the Deployment layout trades the sidecar's isolation for independent deployment, and needs one Deployment per consuming service.
 
+`ddflagd --help` prints the same configuration summary, and `ddflagd --version` reports the release. There are no configuration flags: the `DD_` variables are read by the official SDK itself, and a flag alongside them would make the effective configuration depend on which of the two won.
+
 ### Configuration
 
 | Variable | Default | Meaning |

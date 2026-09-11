@@ -45,7 +45,7 @@ type Bridge struct {
 // BuildBridge compiles the ddflagd binary into dir and returns its path.
 func BuildBridge(ctx context.Context, dir string) (string, error) {
 	binary := filepath.Join(dir, "ddflagd")
-	cmd := exec.CommandContext(ctx, "go", "build", "-o", binary, "../cmd/ddflagd")
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", binary, "..")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("building ddflagd: %w: %s", err, out)

@@ -1,6 +1,25 @@
-// Command ddflagd serves the OpenFeature Remote Evaluation Protocol backed by
-// the official Datadog Feature Flags provider.
-package main
+/*
+Copyright © 2026 Ken'ichiro Oyama <k1lowxb@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+package cmd
 
 import (
 	"context"
@@ -13,6 +32,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/k1LoW/ddflagd/internal/admin"
 	"github.com/k1LoW/ddflagd/internal/auth"
 	"github.com/k1LoW/ddflagd/internal/bridge"
@@ -21,41 +42,83 @@ import (
 	"github.com/k1LoW/ddflagd/version"
 )
 
-// commit and date are set at build time.
-var (
-	commit = "none"
-	date   = "unknown"
-)
-
 // readHeaderTimeout bounds how long a client may take to send its request
 // headers. It is short because every caller is either a sidecar on loopback or
 // a Pod in the same cluster.
 const readHeaderTimeout = 5 * time.Second
 
-func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
-	slog.SetDefault(logger)
+// newRootCmd builds the root command.
+//
+// A command is built per call rather than kept in a package variable, because
+// cobra stores parsed flag values on the command itself: a second Execute on
+// the same instance would inherit the first one's flags.
+func newRootCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   version.Name,
+		Short: "ddflagd serves Datadog Feature Flags over the OpenFeature Remote Evaluation Protocol",
+		Long: `ddflagd serves Datadog Feature Flags over OFREP, so that a language without a
+Datadog SDK can evaluate Datadog flags through the OpenFeature API.
 
-	if err := run(logger); err != nil {
-		logger.Error("ddflagd exited", slog.Any("error", err))
+It holds Datadog's official Go SDK: the flag configuration, the evaluation and
+the telemetry all stay inside that SDK, and ddflagd converts between it and the
+protocol. A caller uses its language's OFREP provider unchanged.
+
+  ddflagd                    Run the bridge, configured by the environment
+
+Two listeners come up. The evaluation listener answers
+POST /ofrep/v1/evaluate/flags/{key} and is bound to loopback by default, so in
+a sidecar nothing outside the Pod can evaluate flags. The operational listener
+answers /healthz, /readyz, /metrics and /debug/status, and is bound to the Pod
+IP, because that is where a kubelet probe arrives.
+
+Configuration is environment only, and deliberately so: the DD_ variables are
+read by the official SDK itself, and a flag alongside them would make the
+effective configuration depend on which of the two won.
+
+  DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED  Required, "true".
+  DD_SERVICE                                 Required. The consuming service's
+                                             name, which the exposure events and
+                                             the evaluation metrics are recorded
+                                             under.
+  DD_ENV, DD_VERSION                         The consuming service's environment
+                                             and version.
+  DD_TRACE_AGENT_URL                         The Agent. A Unix socket looks like
+                                             unix:///var/run/datadog/apm.socket.
+  DDFLAGD_LISTEN_ADDR                        The evaluation listener.
+  DDFLAGD_ADMIN_ADDR                         The operational listener.
+
+The README documents the rest, along with what a caller is asked to do.`,
+		Args:    cobra.NoArgs,
+		RunE:    run,
+		Version: version.Version,
+		// A configuration or startup failure is not a usage error, and the
+		// error is reported as a structured log line rather than by cobra.
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+}
+
+// Execute runs the root command.
+func Execute() {
+	if err := newRootCmd().Execute(); err != nil {
+		slog.Error("ddflagd exited", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
 
-func run(logger *slog.Logger) error {
+func run(cmd *cobra.Command, _ []string) error {
 	cfg, err := bridge.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("configuration: %w", err)
 	}
 
 	m := metrics.New(version.Version)
-	logger = logger.With(
+	logger := slog.Default().With(
 		slog.String("service", cfg.Service),
 		slog.String("version", version.Version),
 	)
 	logger.Info("starting ddflagd",
-		slog.String("commit", commit),
-		slog.String("date", date),
+		slog.String("revision", version.Revision),
 		slog.String("dd_trace_go_version", metrics.DDTraceGoVersion()),
 		slog.String("env", cfg.Env),
 		slog.String("agent_url", cfg.AgentURL),
@@ -65,7 +128,7 @@ func run(logger *slog.Logger) error {
 
 	// The signal context is installed before the provider is created so that a
 	// SIGTERM during a slow provider startup is not lost.
-	signalCtx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	signalCtx, stopSignals := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stopSignals()
 
 	b, err := bridge.New(signalCtx, bridge.Options{Config: cfg, Logger: logger, Metrics: m})
@@ -86,7 +149,7 @@ func run(logger *slog.Logger) error {
 		Status:       b,
 		Metrics:      m,
 		Logger:       logger,
-		Revision:     commit,
+		Revision:     version.Revision,
 		PprofEnabled: cfg.PprofEnabled,
 	})
 	if err != nil {

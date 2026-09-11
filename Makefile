@@ -1,17 +1,9 @@
 PKG = github.com/k1LoW/ddflagd
-COMMIT = $$(git describe --tags --always)
-OSNAME=${shell uname -s}
-ifeq ($(OSNAME),Darwin)
-	DATE = $$(gdate --utc '+%Y-%m-%d_%H:%M:%S')
-else
-	DATE = $$(date --utc '+%Y-%m-%d_%H:%M:%S')
-endif
+COMMIT = $(shell git rev-parse --short HEAD)
 
 export GO111MODULE=on
 
-# commit and date live in package main of cmd/ddflagd, which the linker
-# addresses as "main".
-BUILD_LDFLAGS = -s -w -X main.commit=$(COMMIT) -X main.date=$(DATE)
+BUILD_LDFLAGS = "-s -w -X $(PKG)/version.Revision=$(COMMIT)"
 
 default: test
 
@@ -37,7 +29,7 @@ lint:
 	go vet -vettool=`which gostyle` -gostyle.config=$(PWD)/.gostyle.yml ./...
 
 build:
-	CGO_ENABLED=0 go build -ldflags="$(BUILD_LDFLAGS)" -trimpath -o ddflagd ./cmd/ddflagd
+	CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -trimpath -o ddflagd .
 
 depsdev:
 	go install github.com/Songmu/gocredits/cmd/gocredits@latest
