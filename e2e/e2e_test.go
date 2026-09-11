@@ -10,6 +10,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -17,8 +18,7 @@ import (
 )
 
 const (
-	defaultTestAgentURL = "http://127.0.0.1:9126"
-	ufcPath             = "../testdata/ffe-system-test-data/ufc-config.json"
+	ufcPath = "../testdata/ffe-system-test-data/ufc-config.json"
 
 	service        = "ddflagd-e2e-service"
 	environment    = "e2e"
@@ -28,11 +28,11 @@ const (
 )
 
 var (
-	bridge   *Bridge
-	proxy    *AgentProxy
-	agent    *TestAgent
-	ufc      json.RawMessage
-	setupErr error
+	bridge    *Bridge
+	proxy     *AgentProxy
+	testAgent *TestAgent
+	ufc       json.RawMessage
+	setupErr  error
 )
 
 func TestMain(m *testing.M) {
@@ -40,7 +40,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func run(m *testing.M) int {
+// run returns through a named result so that the deferred teardown can see
+// whether the suite failed.
+func run(m *testing.M) (code int) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
@@ -58,21 +60,30 @@ func run(m *testing.M) int {
 	}
 	ufc = json.RawMessage(raw)
 
-	agentURL := os.Getenv("DDFLAGD_TEST_AGENT_URL")
-	if agentURL == "" {
-		agentURL = defaultTestAgentURL
-	}
-	agent = NewTestAgent(agentURL)
-	if err := agent.WaitReady(ctx); err != nil {
+	agent, stopAgent, err := StartTestAgent(ctx)
+	if err != nil {
 		setupErr = err
 		return runWithSetupError(m)
 	}
-	if err := agent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
+	// A container left behind is the thing this suite promises not to do, so a
+	// teardown that could not remove it fails the run, the way the bridge's
+	// does below.
+	defer func() {
+		if err := stopAgent(code != 0); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			if code == 0 {
+				code = 1
+			}
+		}
+	}()
+	testAgent = agent
+
+	if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
 		setupErr = err
 		return runWithSetupError(m)
 	}
 
-	proxy, err = NewAgentProxy(agentURL)
+	proxy, err = NewAgentProxy(testAgent.URL())
 	if err != nil {
 		setupErr = err
 		return runWithSetupError(m)
@@ -103,7 +114,7 @@ func run(m *testing.M) int {
 		return code
 	}
 
-	code := m.Run()
+	code = m.Run()
 
 	if err := bridge.Terminate(20 * time.Second); err != nil {
 		// A non-zero exit here means the shutdown sequence did not complete,
@@ -124,7 +135,7 @@ func runWithSetupError(m *testing.M) int {
 func requireSetup(t *testing.T) {
 	t.Helper()
 	if setupErr != nil {
-		t.Fatalf("the e2e environment is not available: %v\nStart it with: docker compose up -d test-agent", setupErr)
+		t.Fatalf("the e2e environment is not available: %v", setupErr)
 	}
 }
 
@@ -395,13 +406,13 @@ func TestFlagConfigurationUpdateIsPickedUp(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := agent.SetFlagConfiguration(t.Context(), primaryConfigID, updated); err != nil {
+	if err := testAgent.SetFlagConfiguration(t.Context(), primaryConfigID, updated); err != nil {
 		t.Fatalf("installing the updated configuration: %v", err)
 	}
 	t.Cleanup(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		if err := agent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
+		if err := testAgent.SetFlagConfiguration(ctx, primaryConfigID, ufc); err != nil {
 			t.Errorf("restoring the configuration: %v", err)
 			return
 		}
