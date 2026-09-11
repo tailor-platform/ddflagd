@@ -1,6 +1,6 @@
 module github.com/k1LoW/ddflagd
 
-go 1.26.8
+go 1.27.1
 
 require (
 	github.com/DataDog/dd-trace-go/v2 v2.10.1

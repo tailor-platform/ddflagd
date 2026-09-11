@@ -81,20 +81,16 @@ func results() map[string]openfeature.InterfaceResolutionDetail {
 	}
 	value := func(v any, reason openfeature.Reason, variant string) openfeature.InterfaceResolutionDetail {
 		return openfeature.InterfaceResolutionDetail{
-			Value: v,
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				Reason:       reason,
-				Variant:      variant,
-				FlagMetadata: metadata,
-			},
+			Value:        v,
+			Reason:       reason,
+			Variant:      variant,
+			FlagMetadata: metadata,
 		}
 	}
 	failure := func(err openfeature.ResolutionError) openfeature.InterfaceResolutionDetail {
 		return openfeature.InterfaceResolutionDetail{
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: err,
-				Reason:          openfeature.ErrorReason,
-			},
+			ResolutionError: err,
+			Reason:          openfeature.ErrorReason,
 		}
 	}
 
@@ -157,10 +153,8 @@ func (p *scriptedProvider) ObjectEvaluation(ctx context.Context, flag string, _ 
 	res, ok := p.results[flag]
 	if !ok {
 		return openfeature.InterfaceResolutionDetail{
-			ProviderResolutionDetail: openfeature.ProviderResolutionDetail{
-				ResolutionError: openfeature.NewFlagNotFoundResolutionError("flag not found"),
-				Reason:          openfeature.ErrorReason,
-			},
+			ResolutionError: openfeature.NewFlagNotFoundResolutionError("flag not found"),
+			Reason:          openfeature.ErrorReason,
 		}
 	}
 	return res

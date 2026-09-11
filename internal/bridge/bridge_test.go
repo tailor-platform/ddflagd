@@ -337,8 +337,8 @@ func (p *hookedProvider) Metadata() openfeature.Metadata {
 
 func (p *hookedProvider) ObjectEvaluation(_ context.Context, _ string, _ any, _ openfeature.FlattenedContext) openfeature.InterfaceResolutionDetail {
 	return openfeature.InterfaceResolutionDetail{
-		Value:                    "value",
-		ProviderResolutionDetail: openfeature.ProviderResolutionDetail{Reason: openfeature.StaticReason},
+		Value:  "value",
+		Reason: openfeature.StaticReason,
 	}
 }
 
