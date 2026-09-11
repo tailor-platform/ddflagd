@@ -37,7 +37,7 @@ lint:
 	go vet -vettool=`which gostyle` -gostyle.config=$(PWD)/.gostyle.yml ./...
 
 build:
-	CGO_ENABLED=0 go build -ldflags="$(BUILD_LDFLAGS)" -o ddflagd ./cmd/ddflagd
+	CGO_ENABLED=0 go build -ldflags="$(BUILD_LDFLAGS)" -trimpath -o ddflagd ./cmd/ddflagd
 
 depsdev:
 	go install github.com/Songmu/gocredits/cmd/gocredits@latest

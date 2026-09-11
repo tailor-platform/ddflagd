@@ -12,6 +12,8 @@ linters:
     - gosec
     - misspell
     - revive
+    - funcorder
+    - modernize
   settings:
     errcheck:
       check-type-assertions: true

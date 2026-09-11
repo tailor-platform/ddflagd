@@ -151,6 +151,28 @@ func (p *AgentProxy) URL() string { return p.server.URL }
 // Close stops the proxy.
 func (p *AgentProxy) Close() { p.server.Close() }
 
+// Exposures returns every exposure payload received so far.
+func (p *AgentProxy) Exposures() []ExposurePayload {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append([]ExposurePayload(nil), p.exposures...)
+}
+
+// ExposureHeaders returns the headers of every exposure request received so
+// far.
+func (p *AgentProxy) ExposureHeaders() []http.Header {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append([]http.Header(nil), p.headers...)
+}
+
+// FlagEvaluations returns every flag evaluation payload received so far.
+func (p *AgentProxy) FlagEvaluations() []json.RawMessage {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append([]json.RawMessage(nil), p.flagEvaluations...)
+}
+
 func (p *AgentProxy) recordExposures(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -179,28 +201,6 @@ func (p *AgentProxy) recordFlagEvaluations(w http.ResponseWriter, r *http.Reques
 	p.flagEvaluations = append(p.flagEvaluations, json.RawMessage(body))
 	p.mu.Unlock()
 	w.WriteHeader(http.StatusOK)
-}
-
-// Exposures returns every exposure payload received so far.
-func (p *AgentProxy) Exposures() []ExposurePayload {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return append([]ExposurePayload(nil), p.exposures...)
-}
-
-// ExposureHeaders returns the headers of every exposure request received so
-// far.
-func (p *AgentProxy) ExposureHeaders() []http.Header {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return append([]http.Header(nil), p.headers...)
-}
-
-// FlagEvaluations returns every flag evaluation payload received so far.
-func (p *AgentProxy) FlagEvaluations() []json.RawMessage {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return append([]json.RawMessage(nil), p.flagEvaluations...)
 }
 
 func waitFor(ctx context.Context, interval time.Duration, check func() error) error {

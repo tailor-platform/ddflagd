@@ -11,6 +11,7 @@ ARG DATE=unknown
 
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-s -w -X main.commit=${COMMIT} -X main.date=${DATE}" \
+    -trimpath \
     -o /ddflagd ./cmd/ddflagd
 
 # ddflagd needs neither a shell nor a certificate store: it talks to the local

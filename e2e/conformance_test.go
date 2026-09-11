@@ -5,6 +5,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -77,9 +78,7 @@ func runCase(t *testing.T, c evaluationCase) {
 	t.Helper()
 
 	evalContext := make(map[string]any, len(c.Attributes)+1)
-	for name, value := range c.Attributes {
-		evalContext[name] = value
-	}
+	maps.Copy(evalContext, c.Attributes)
 	// A null targeting key in the fixtures means the caller has none, so the
 	// property is left out of the request rather than sent as null.
 	if c.TargetingKey != nil {

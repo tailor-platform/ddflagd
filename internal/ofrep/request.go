@@ -59,11 +59,10 @@ func (h *Handler) decodeContext(r *http.Request, key string) (*openfeature.Evalu
 
 	var req evaluationRequest
 	if err := dec.Decode(&req); err != nil {
-		var maxBytes *http.MaxBytesError
-		if errors.As(err, &maxBytes) {
+		if maxBytes, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			return nil, &requestFailure{
 				status:  http.StatusRequestEntityTooLarge,
-				body:    failureResponse{Key: key, ErrorCode: string(openfeature.ParseErrorCode), ErrorDetails: fmt.Sprintf("the request body exceeds %d bytes", h.maxBodyBytes)},
+				body:    failureResponse{Key: key, ErrorCode: string(openfeature.ParseErrorCode), ErrorDetails: fmt.Sprintf("the request body exceeds %d bytes", maxBytes.Limit)},
 				outcome: metrics.OutcomeInvalidRequest,
 			}
 		}

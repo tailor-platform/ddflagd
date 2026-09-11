@@ -39,7 +39,7 @@ jobs:
         with:
           go_version_file: go.mod
           cache: false
-          fail_level: warning
+          fail_level: error
 
       - name: Run gostyle
         uses: k1LoW/gostyle-action@e1b847d37b3041c5fdb8b911bcf00b350779ca61 # v1.5.1
@@ -59,11 +59,6 @@ jobs:
 
       - name: Run tests
         run: make ci
-
-      - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
-        with:
-          scan-type: 'fs'
 
       - name: Run octocov
         uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2

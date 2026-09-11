@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"os"
@@ -78,9 +79,7 @@ func StartBridge(ctx context.Context, cfg BridgeConfig) (*Bridge, error) {
 		"DDFLAGD_DRAIN_DELAY":                    "0s",
 		"DDFLAGD_INIT_TIMEOUT":                   "60s",
 	}
-	for name, value := range cfg.Extra {
-		env[name] = value
-	}
+	maps.Copy(env, cfg.Extra)
 
 	// The child gets an explicit environment so that a DD_ variable in the
 	// developer's shell cannot change the outcome.
@@ -206,6 +205,25 @@ func (b *Bridge) Get(ctx context.Context, path string) (int, map[string]any, err
 	return b.getJSON(ctx, b.AdminURL()+path)
 }
 
+// Terminate sends SIGTERM and waits for the process to exit, which is the
+// shutdown sequence a Kubernetes Pod termination triggers.
+func (b *Bridge) Terminate(timeout time.Duration) error {
+	if b.cmd.Process == nil {
+		return nil
+	}
+	if err := b.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		return err
+	}
+	select {
+	case err := <-b.exited:
+		b.exitStatus = err
+		return err
+	case <-time.After(timeout):
+		_ = b.cmd.Process.Kill()
+		return fmt.Errorf("the process did not exit within %s", timeout)
+	}
+}
+
 func (b *Bridge) getJSON(ctx context.Context, u string) (int, map[string]any, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
@@ -228,25 +246,6 @@ func (b *Bridge) getJSON(ctx context.Context, u string) (int, map[string]any, er
 		}
 	}
 	return res.StatusCode, decoded, nil
-}
-
-// Terminate sends SIGTERM and waits for the process to exit, which is the
-// shutdown sequence a Kubernetes Pod termination triggers.
-func (b *Bridge) Terminate(timeout time.Duration) error {
-	if b.cmd.Process == nil {
-		return nil
-	}
-	if err := b.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		return err
-	}
-	select {
-	case err := <-b.exited:
-		b.exitStatus = err
-		return err
-	case <-time.After(timeout):
-		_ = b.cmd.Process.Kill()
-		return fmt.Errorf("the process did not exit within %s", timeout)
-	}
 }
 
 func freeLoopbackAddr() (string, error) {

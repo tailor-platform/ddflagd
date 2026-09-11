@@ -695,12 +695,6 @@ type scriptedProvider struct {
 	lastCtx openfeature.FlattenedContext
 }
 
-func (p *scriptedProvider) lastContext() openfeature.FlattenedContext {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	return p.lastCtx
-}
-
 func (p *scriptedProvider) Metadata() openfeature.Metadata {
 	return openfeature.Metadata{Name: "scripted"}
 }
@@ -757,6 +751,12 @@ func (p *scriptedProvider) IntEvaluation(ctx context.Context, flag string, defau
 
 func (p *scriptedProvider) Hooks() []openfeature.Hook {
 	return []openfeature.Hook{&countingHook{calls: &p.hookCalls}}
+}
+
+func (p *scriptedProvider) lastContext() openfeature.FlattenedContext {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.lastCtx
 }
 
 type countingHook struct {
