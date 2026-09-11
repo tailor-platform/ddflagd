@@ -129,7 +129,13 @@ make build
 
 `make e2e` runs a real ddflagd process against [`dd-apm-test-agent`](https://github.com/DataDog/dd-apm-test-agent), the fake Agent Datadog uses in every tracer's CI. It delivers the flag configuration over Remote Configuration and receives the exposure events, so nothing about either has to be reimplemented here, and no Datadog account is involved.
 
-The conformance suite runs every case of [`ffe-system-test-data`](https://github.com/DataDog/ffe-system-test-data), Datadog's cross-language evaluation fixtures, through OFREP. It is not a test of the evaluation logic, which belongs to the official SDK; it checks that the request conversion and the OFREP mapping preserve the value and the reason of every case. The submodule at `testdata/ffe-system-test-data` is pinned to the commit the dd-trace-go release under test pins, so the fixtures move with the SDK.
+The conformance suite runs every case of [`ffe-system-test-data`](https://github.com/DataDog/ffe-system-test-data), Datadog's cross-language evaluation fixtures, through OFREP. It is not a test of the evaluation logic, which belongs to the official SDK; it checks that the request conversion and the OFREP mapping preserve the value and the reason of every case.
+
+The submodule at `testdata/ffe-system-test-data` is pinned to the commit the dd-trace-go release under test pins, and is bumped together with dd-trace-go rather than on its own. The fixtures run ahead of the shipped SDK: upstream `main` currently carries semver operators the v2.10.1 evaluator does not implement, and expects a malformed flag to evaluate to `PARSE_ERROR` where v2.10.1 answers `DEFAULT`. Pinning to what the SDK pins is what keeps the suite a statement about ddflagd rather than about Datadog's release order. To find the right commit for a dd-trace-go version:
+
+```
+gh api repos/DataDog/dd-trace-go/contents/openfeature/ffe-system-test-data?ref=vX.Y.Z --jq .sha
+```
 
 `testdata/ofrep/openapi.yaml` is the OFREP OpenAPI document (version 0.3.0), vendored so the contract test is reproducible offline.
 

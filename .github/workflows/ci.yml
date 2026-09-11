@@ -28,6 +28,12 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # Warm the build cache first. golangci-lint has to load every package,
+      # and doing that from scratch on top of the dd-trace-go dependency tree
+      # is what makes the lint step slow.
+      - name: Build
+        run: go build -tags e2e ./...
+
       - name: Run lint
         uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
         with:

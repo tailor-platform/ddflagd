@@ -1,6 +1,8 @@
 version: "2"
 run:
-  timeout: 2m
+  # Loading this module's packages pulls in the whole dd-trace-go dependency
+  # tree, which does not fit in the default timeout on a cold cache.
+  timeout: 10m
   build-tags:
     - e2e
 linters:
