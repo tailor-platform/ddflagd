@@ -4,12 +4,14 @@ ddflagd lets a language without a Datadog Feature Flags SDK evaluate Datadog fla
 
 It is an [OFREP](https://openfeature.dev/docs/reference/other-technologies/ofrep/) server that holds Datadog's official Go SDK. The flag configuration, the evaluation and the telemetry all stay inside that SDK; ddflagd converts between it and the protocol.
 
-```
-Rust application                     ddflagd (Go)                      Datadog Agent
-  open-feature          OFREP          OFREP server          RC          (node-local
-  + open-feature-ofrep  ──────▶        dd-trace-go       ──────▶          DaemonSet)
-                        HTTP/JSON      openfeature          EVP proxy
-                        127.0.0.1:8016 provider + tracer
+```mermaid
+flowchart LR
+    app["Rust application<br>open-feature<br>+ open-feature-ofrep"]
+    ddflagd["ddflagd (Go)<br>OFREP server<br>dd-trace-go openfeature<br>provider + tracer"]
+    agent["Datadog Agent<br>(node-local DaemonSet)"]
+
+    app -->|"OFREP<br>HTTP/JSON<br>127.0.0.1:8016"| ddflagd
+    ddflagd -->|"RC<br>EVP proxy"| agent
 ```
 
 ## What you need on the application side
