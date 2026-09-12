@@ -157,6 +157,23 @@ The evaluation listener and the operational listener are separate on purpose. In
 | operational, `8017` | `GET /metrics` | Prometheus format. |
 | operational, `8017` | `GET /debug/status` | Versions, state, evaluation counts by outcome, the last error, and the effective configuration with the shared secret redacted. |
 
+### The flag configuration in memory
+
+The provider holds the whole flag configuration for `DD_SERVICE` in memory and evaluates against it locally. An evaluation never reaches the Agent or Datadog, so evaluation latency does not depend on either being up. Remote Configuration replaces the held configuration wholesale at `DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS`.
+
+What that means when the Agent stops answering:
+
+- **A failed poll changes nothing.** A connection error, a non-200, an empty response, all leave the held configuration untouched. Evaluation keeps running on the configuration last received, for as long as the process lives. Nothing expires it.
+- **Readiness stays green through it.** Dropping out of the Service would send every caller to its code default, which is worse than evaluating against a configuration that is minutes old.
+- **Exposure events and evaluation counts are lost, not queued.** A failed send drops them, so the Feature Flags UI goes quiet while evaluation is still correct.
+- **A restart during the outage is fatal.** The configuration is never written to disk, so a restarted process has nothing to evaluate against and exits after `DDFLAGD_INIT_TIMEOUT`. An Agent outage is survivable while running and not survivable across a rolling update, so wait it out before deploying.
+
+The Agent keeps its own on-disk Remote Configuration cache, so Datadog being unreachable from a live Agent is not the same outage as the Agent being unreachable from ddflagd; only the latter is the one described here.
+
+Nothing is held on the caller's side either. An OFREP provider is a remote evaluation provider and keeps no configuration, so every evaluation falls back to the code default for as long as ddflagd is restarting.
+
+One state has no probe behind it. If the configuration is withdrawn upstream rather than merely undelivered, the provider clears what it holds and every evaluation answers the code default, while readiness stays 200 because the process is working exactly as designed. The `outcome` breakdown of `ddflagd_evaluations_total` is what shows it.
+
 ### Metrics
 
 | Metric | Type | Labels |
