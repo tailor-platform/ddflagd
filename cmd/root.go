@@ -1,5 +1,5 @@
 /*
-Copyright © 2026 Ken'ichiro Oyama <k1lowxb@gmail.com>
+Copyright © 2026 Tailor Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
