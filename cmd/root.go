@@ -35,12 +35,12 @@ import (
 	"github.com/k1LoW/donegroup"
 	"github.com/spf13/cobra"
 
-	"github.com/k1LoW/ddflagd/internal/admin"
-	"github.com/k1LoW/ddflagd/internal/auth"
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/internal/metrics"
-	"github.com/k1LoW/ddflagd/internal/ofrep"
-	"github.com/k1LoW/ddflagd/version"
+	"github.com/tailor-platform/ddflagd/internal/admin"
+	"github.com/tailor-platform/ddflagd/internal/auth"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/ofrep"
+	"github.com/tailor-platform/ddflagd/version"
 )
 
 // readHeaderTimeout bounds how long a client may take to send its request

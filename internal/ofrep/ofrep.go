@@ -14,8 +14,8 @@ import (
 
 	"github.com/open-feature/go-sdk/openfeature"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // Paths of the OFREP endpoints.

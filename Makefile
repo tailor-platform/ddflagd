@@ -1,4 +1,4 @@
-PKG = github.com/k1LoW/ddflagd
+PKG = github.com/tailor-platform/ddflagd
 COMMIT = $(shell git rev-parse --short HEAD)
 
 export GO111MODULE=on

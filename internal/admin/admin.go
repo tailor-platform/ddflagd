@@ -10,9 +10,9 @@ import (
 	"net/http/pprof"
 	"time"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/internal/metrics"
-	"github.com/k1LoW/ddflagd/version"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/version"
 )
 
 // StatusReporter is the part of the bridge the operational listener reports on.

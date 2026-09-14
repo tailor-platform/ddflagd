@@ -9,7 +9,7 @@ COPY . /workdir/
 ARG COMMIT=HEAD
 
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags "-s -w -X github.com/k1LoW/ddflagd/version.Revision=${COMMIT}" \
+    -ldflags "-s -w -X github.com/tailor-platform/ddflagd/version.Revision=${COMMIT}" \
     -trimpath \
     -o /ddflagd .
 

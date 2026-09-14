@@ -7,7 +7,7 @@ import (
 
 	"github.com/open-feature/go-sdk/openfeature"
 
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // OFREP reasons. The protocol's reason enum is narrower than OpenFeature's, so

@@ -11,7 +11,7 @@ import (
 
 	"github.com/open-feature/go-sdk/openfeature"
 
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // errorCodeProviderNotReady is an OFREP extension. The protocol has no error

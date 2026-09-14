@@ -1,4 +1,4 @@
-module github.com/k1LoW/ddflagd
+module github.com/tailor-platform/ddflagd
 
 go 1.27.1
 

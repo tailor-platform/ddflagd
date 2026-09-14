@@ -22,8 +22,8 @@ import (
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/open-feature/go-sdk/openfeature/isolated"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/internal/ofrep"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/ofrep"
 )
 
 // handlerTimeout is short so that the slow flag below reaches it quickly.

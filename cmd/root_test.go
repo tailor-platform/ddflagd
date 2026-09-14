@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/version"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/version"
 )
 
 // TestVersionFlag states that the binary reports the version tagpr keeps in

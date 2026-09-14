@@ -17,8 +17,8 @@ import (
 	"github.com/open-feature/go-sdk/openfeature/isolated"
 	"github.com/open-feature/go-sdk/openfeature/memprovider"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // ddMetadata is the flag metadata the official Datadog provider attaches to an

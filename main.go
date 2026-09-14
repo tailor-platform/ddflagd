@@ -25,7 +25,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/k1LoW/ddflagd/cmd"
+	"github.com/tailor-platform/ddflagd/cmd"
 )
 
 func main() {

@@ -11,7 +11,7 @@ import (
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/open-feature/go-sdk/openfeature/memprovider"
 
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // TestCheckDatadogProvider states that a provider which is not the Datadog one

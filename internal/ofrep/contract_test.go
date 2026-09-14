@@ -11,7 +11,7 @@ import (
 	"github.com/pb33f/libopenapi"
 	validator "github.com/pb33f/libopenapi-validator"
 
-	"github.com/k1LoW/ddflagd/internal/bridge"
+	"github.com/tailor-platform/ddflagd/internal/bridge"
 )
 
 // specPath is the vendored OFREP OpenAPI document. It is vendored rather than

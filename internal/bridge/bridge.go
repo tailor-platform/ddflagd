@@ -16,7 +16,7 @@ import (
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/open-feature/go-sdk/openfeature/isolated"
 
-	"github.com/k1LoW/ddflagd/internal/metrics"
+	"github.com/tailor-platform/ddflagd/internal/metrics"
 )
 
 // State is the lifecycle state of the bridge.
