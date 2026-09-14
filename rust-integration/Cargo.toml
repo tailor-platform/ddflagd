@@ -19,4 +19,4 @@ open-feature = { version = "0.3", default-features = false }
 open-feature-ofrep = "0.1"
 
 [dev-dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "process"] }
+tokio = { version = "=1.53.1", features = ["macros", "rt-multi-thread", "time", "process"] }
