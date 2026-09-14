@@ -19,6 +19,12 @@ FROM gcr.io/distroless/static:nonroot
 
 COPY --from=builder /ddflagd /ddflagd
 
+# The binary statically links Apache-2.0 dependencies, and section 4 of that
+# license applies to object form as much as to source, so the attributions
+# travel with the image rather than living only in the repository.
+COPY --from=builder /workdir/LICENSE /LICENSE
+COPY --from=builder /workdir/CREDITS /CREDITS
+
 # The evaluation listener; the operational listener is 8017.
 EXPOSE 8016 8017
 
