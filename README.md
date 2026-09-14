@@ -71,7 +71,7 @@ One more thing specific to this crate: add `open_feature_ofrep=warn` to the `tra
 
 ## Running it
 
-The container image is `ghcr.io/k1LoW/ddflagd`, built for `linux/amd64` and `linux/arm64` with SLSA provenance and an SPDX SBOM attached. Verify it with `gh attestation verify`.
+The container image is `ghcr.io/tailor-platform/ddflagd`, built for `linux/amd64` and `linux/arm64` with SLSA provenance and an SPDX SBOM attached. Verify it with `gh attestation verify`.
 
 Kubernetes manifests are in [`deploy/sidecar`](deploy/sidecar) and [`deploy/deployment`](deploy/deployment). Start with the sidecar; the Deployment layout trades the sidecar's isolation for independent deployment, and needs one Deployment per consuming service.
 

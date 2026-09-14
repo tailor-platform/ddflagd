@@ -57,7 +57,7 @@ spec:
         # and accept that evaluations before it is ready fall back to the
         # caller's code defaults.
         - name: ddflagd
-          image: ghcr.io/k1LoW/ddflagd:0.0.0 # pin by digest in production
+          image: ghcr.io/tailor-platform/ddflagd:0.0.0 # pin by digest in production
           restartPolicy: Always
           env:
             - name: DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED

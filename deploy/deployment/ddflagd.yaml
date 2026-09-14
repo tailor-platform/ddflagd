@@ -16,7 +16,7 @@ metadata:
   name: ddflagd-example-app
   labels:
     app: ddflagd
-    ddflagd.k1low.dev/consumer: example-app
+    ddflagd.tailor.tech/consumer: example-app
 spec:
   # Two or more: each replica receives the flag configuration independently, so
   # there is no shared state to coordinate. Exposure deduplication is per
@@ -25,12 +25,12 @@ spec:
   selector:
     matchLabels:
       app: ddflagd
-      ddflagd.k1low.dev/consumer: example-app
+      ddflagd.tailor.tech/consumer: example-app
   template:
     metadata:
       labels:
         app: ddflagd
-        ddflagd.k1low.dev/consumer: example-app
+        ddflagd.tailor.tech/consumer: example-app
       annotations:
         ad.datadoghq.com/ddflagd.checks: |
           {
@@ -49,7 +49,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ddflagd
-          image: ghcr.io/k1LoW/ddflagd:0.0.0 # pin by digest in production
+          image: ghcr.io/tailor-platform/ddflagd:0.0.0 # pin by digest in production
           env:
             - name: DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED
               value: "true"
@@ -129,7 +129,7 @@ metadata:
 spec:
   selector:
     app: ddflagd
-    ddflagd.k1low.dev/consumer: example-app
+    ddflagd.tailor.tech/consumer: example-app
   # Only the evaluation listener is published. The operational listener stays
   # reachable on the Pod IP for kubelet and for metric scraping.
   ports:
@@ -146,7 +146,7 @@ spec:
   selector:
     matchLabels:
       app: ddflagd
-      ddflagd.k1low.dev/consumer: example-app
+      ddflagd.tailor.tech/consumer: example-app
 ---
 # ddflagd sends the caller's evaluation attributes to Datadog as exposure
 # events, so restricting who can evaluate is part of restricting what ends up
@@ -159,7 +159,7 @@ spec:
   podSelector:
     matchLabels:
       app: ddflagd
-      ddflagd.k1low.dev/consumer: example-app
+      ddflagd.tailor.tech/consumer: example-app
   policyTypes:
     - Ingress
   ingress:
