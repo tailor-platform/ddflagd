@@ -32,13 +32,16 @@ build:
 	CGO_ENABLED=0 go build -ldflags=$(BUILD_LDFLAGS) -trimpath -o ddflagd .
 
 depsdev:
-	go install github.com/Songmu/gocredits/cmd/gocredits@latest
 	go install golang.org/x/vuln/cmd/govulncheck@latest
 	go install github.com/k1LoW/gostyle@latest
 
-prerelease_for_tagpr: depsdev
+credits:
+	go install github.com/Songmu/gocredits/cmd/gocredits@latest
+	gocredits -w .
+
+prerelease_for_tagpr:
 	go mod tidy
-	gocredits -skip-missing -w .
+	$(MAKE) credits
 	git add CHANGELOG.md CREDITS go.mod go.sum
 
-.PHONY: default ci test e2e rust-test lint build depsdev prerelease_for_tagpr
+.PHONY: default ci test e2e rust-test lint build depsdev credits prerelease_for_tagpr
