@@ -7,7 +7,7 @@ require (
 	github.com/k1LoW/donegroup v1.10.3
 	github.com/open-feature/go-sdk v1.19.0
 	github.com/pb33f/libopenapi v0.41.1
-	github.com/pb33f/libopenapi-validator v0.14.0
+	github.com/pb33f/libopenapi-validator v0.14.1
 	github.com/spf13/cobra v1.10.2
 	github.com/testcontainers/testcontainers-go v0.44.0
 )
@@ -118,7 +118,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9 // indirect
 	golang.org/x/mod v0.41.0 // indirect
