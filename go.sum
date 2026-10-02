@@ -173,12 +173,12 @@ github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJw
 github.com/opencontainers/image-spec v1.1.1/go.mod h1:qpqAh3Dmcf36wStyyWU+kCeDgrGnAve2nCC8+7h8Q0M=
 github.com/outcaste-io/ristretto v0.2.3 h1:AK4zt/fJ76kjlYObOeNwh4T3asEuaCmp26pOvUOL9w0=
 github.com/outcaste-io/ristretto v0.2.3/go.mod h1:W8HywhmtlopSB1jeMg3JtdIhf+DYkLAr0VN/s4+MHac=
-github.com/pb33f/go-yaml v0.1.0 h1:zZ6Gg+ATbumXlXZNLMHIe7+zTkVqe20lx+TSYRrXEuY=
-github.com/pb33f/go-yaml v0.1.0/go.mod h1:QvWdkHP5VjFYAeHMQUkaPQqREaQnBNOXmWzAjNrnSdo=
+github.com/pb33f/go-yaml v0.1.1 h1:yWGmhVdwzionRnSc/hEJwcfq6PaZL2QdYzyReXBbX7Q=
+github.com/pb33f/go-yaml v0.1.1/go.mod h1:QvWdkHP5VjFYAeHMQUkaPQqREaQnBNOXmWzAjNrnSdo=
 github.com/pb33f/jsonpath v0.8.4 h1:Yx7fxsKl8scgERL22WhKDs2c6gYNNUonPSWEG8Y194s=
 github.com/pb33f/jsonpath v0.8.4/go.mod h1:eO6mgdhw5RgzCxm/bXTi75VUs0/cCYJzdGjMCCUEI6M=
-github.com/pb33f/libopenapi v0.41.1 h1:k2TzRNoFWdwtgZK8LpmqIHIPxD/6nExHkmB7QZXBets=
-github.com/pb33f/libopenapi v0.41.1/go.mod h1:okMH18Y4oyUXUSCr84u+hHe7t/gWDwoHv/f3CEls4SQ=
+github.com/pb33f/libopenapi v0.41.2 h1:7/KNzJJ0o5fC/tYxDYcHjziKfg0bkBpFUfI2UDbChAo=
+github.com/pb33f/libopenapi v0.41.2/go.mod h1:mUldESjO6ownR1TCcywvoYp7e4v/bCdQyiiIqsgWne0=
 github.com/pb33f/libopenapi-validator v0.15.0 h1:5wl7/tpyewqzZ7Y5/M9CZjojlaaK2DYKPZYGIvPq7SI=
 github.com/pb33f/libopenapi-validator v0.15.0/go.mod h1:P52RfZsY/+oWjRL52mpQ8Icwual6rtkJt1qOWdAe4eM=
 github.com/pb33f/ordered-map/v2 v2.3.2 h1:wDyaZ2Pv9QLh64X4utCeD5Zoi9nIv2aW3lwv172O5PQ=
