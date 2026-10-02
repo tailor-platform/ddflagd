@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.1.2](https://github.com/tailor-platform/ddflagd/compare/v0.1.1...v0.1.2) - 2026-10-02
+
+### Other Changes
+- chore(deps): update reviewdog/action-golangci-lint action to v2.10.1 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/25
+- chore(deps): update golang:1.27.1 docker digest to e0174e5 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/26
+- fix: move go.opentelemetry.io/otel/sdk to v1.45.0 for GO-2026-6505 by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/30
+- fix(deps): update module github.com/pb33f/libopenapi-validator to v0.15.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/24
+- chore(deps): update songmu/tagpr action to v1.21.1 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/23
+- chore(deps): update reviewdog/action-golangci-lint action to v2.10.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/29
+- chore(deps): update dtolnay/rust-toolchain digest to 89b1218 - autoclosed by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/28
+- fix(deps): update module github.com/pb33f/libopenapi to v0.41.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/22
+
 ## [v0.1.1](https://github.com/tailor-platform/ddflagd/compare/v0.1.0...v0.1.1) - 2026-09-29
 
 ### Other Changes
