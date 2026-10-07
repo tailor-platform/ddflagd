@@ -6,8 +6,8 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.10.1
 	github.com/k1LoW/donegroup v1.10.4
 	github.com/open-feature/go-sdk v1.19.0
-	github.com/pb33f/libopenapi v0.41.2
-	github.com/pb33f/libopenapi-validator v0.15.0
+	github.com/pb33f/libopenapi v0.41.3
+	github.com/pb33f/libopenapi-validator v0.16.0
 	github.com/spf13/cobra v1.10.2
 	github.com/testcontainers/testcontainers-go v0.44.0
 )
@@ -52,8 +52,7 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-openapi/jsonpointer v0.23.2 // indirect
-	github.com/go-openapi/swag/jsonname v0.26.1 // indirect
+	github.com/go-openapi/jsonpointer v1.0.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.28.0 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
@@ -81,6 +80,7 @@ require (
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/pb33f/go-yaml v0.1.1 // indirect
 	github.com/pb33f/jsonpath v0.8.4 // indirect
+	github.com/pb33f/jsonschema/v6 v6.0.3 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.2 // indirect
 	github.com/petermattis/goid v0.0.0-20260226131333-17d1149c6ac6 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -88,7 +88,6 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.11.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.26.6 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
