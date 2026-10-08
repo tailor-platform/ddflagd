@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.1.3](https://github.com/tailor-platform/ddflagd/compare/v0.1.2...v0.1.3) - 2026-10-08
+
+### Other Changes
+- chore(deps): update rust crate tokio to v1.53.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/32
+- chore(deps): update anchore/sbom-action action to v0.24.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/31
+- chore(deps): update golang docker tag to v1.27.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/40
+
 ## [v0.1.2](https://github.com/tailor-platform/ddflagd/compare/v0.1.1...v0.1.2) - 2026-10-02
 
 ### Other Changes
