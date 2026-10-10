@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.10.1
 	github.com/k1LoW/donegroup v1.10.4
 	github.com/open-feature/go-sdk v1.19.0
-	github.com/pb33f/libopenapi v0.41.2
+	github.com/pb33f/libopenapi v0.41.6
 	github.com/pb33f/libopenapi-validator v0.15.0
 	github.com/spf13/cobra v1.10.2
 	github.com/testcontainers/testcontainers-go v0.44.0
