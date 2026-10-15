@@ -202,7 +202,7 @@ make build
 
 The conformance suite runs every case of [`ffe-system-test-data`](https://github.com/DataDog/ffe-system-test-data), Datadog's cross-language evaluation fixtures, through OFREP. It is not a test of the evaluation logic, which belongs to the official SDK; it checks that the request conversion and the OFREP mapping preserve the value and the reason of every case.
 
-The submodule at `testdata/ffe-system-test-data` is pinned to the commit the dd-trace-go release under test pins, and is bumped together with dd-trace-go rather than on its own. The fixtures run ahead of the shipped SDK: upstream `main` currently carries semver operators the v2.10.1 evaluator does not implement, and expects a malformed flag to evaluate to `PARSE_ERROR` where v2.10.1 answers `DEFAULT`. Pinning to what the SDK pins is what keeps the suite a statement about ddflagd rather than about Datadog's release order. To find the right commit for a dd-trace-go version:
+The submodule at `testdata/ffe-system-test-data` is pinned to the commit the dd-trace-go release under test pins, and is bumped together with dd-trace-go rather than on its own. The fixtures run ahead of the shipped SDK: while dd-trace-go v2.10.1 was current, upstream `main` already carried semver operators its evaluator did not implement, and expected a malformed flag to evaluate to `PARSE_ERROR` where v2.10.1 answered `DEFAULT`. Pinning to what the SDK pins is what keeps the suite a statement about ddflagd rather than about Datadog's release order. To find the right commit for a dd-trace-go version:
 
 ```
 gh api repos/DataDog/dd-trace-go/contents/openfeature/ffe-system-test-data?ref=vX.Y.Z --jq .sha
