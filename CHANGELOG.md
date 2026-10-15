@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.1.3](https://github.com/tailor-platform/ddflagd/compare/v0.1.2...v0.1.3) - 2026-10-15
+
+### Other Changes
+- chore(deps): update rust crate tokio to v1.53.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/32
+- chore(deps): update anchore/sbom-action action to v0.24.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/31
+- chore(deps): update golang docker tag to v1.27.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/40
+- fix: move to Go 1.27.2 and golang.org/x/net v0.60.0 for govulncheck by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/44
+- chore(deps): update golang:1.27.2 docker digest to 8201530 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/42
+- chore(deps): update rust crate tokio to v1.53.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/43
+- chore(deps): update dtolnay/rust-toolchain digest to 686976e by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/41
+- chore(deps): update songmu/tagpr action to v1.21.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/38
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/34
+- fix(deps): update module github.com/pb33f/libopenapi to v0.41.6 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/36
+- fix(deps): update module github.com/pb33f/libopenapi-validator to v0.16.1 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/37
+- fix(deps): update module github.com/datadog/dd-trace-go/v2 to v2.11.2 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/39
+
 ## [v0.1.2](https://github.com/tailor-platform/ddflagd/compare/v0.1.1...v0.1.2) - 2026-10-02
 
 ### Other Changes
