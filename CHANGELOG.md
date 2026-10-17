@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.1.4](https://github.com/tailor-platform/ddflagd/compare/v0.1.3...v0.1.4) - 2026-10-17
+
+### Other Changes
+- chore(deps): update dtolnay/rust-toolchain digest to b725eda by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/45
+- chore(deps): update songmu/tagpr action to v1.21.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/46
+
 ## [v0.1.3](https://github.com/tailor-platform/ddflagd/compare/v0.1.2...v0.1.3) - 2026-10-15
 
 ### Other Changes
