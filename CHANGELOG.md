@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.1.4](https://github.com/tailor-platform/ddflagd/compare/v0.1.3...v0.1.4) - 2026-10-22
+
+### Other Changes
+- chore(deps): update dtolnay/rust-toolchain digest to b725eda by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/45
+- chore(deps): update songmu/tagpr action to v1.21.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/46
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/48
+- fix: build with Go 1.27.3 for GO-2026-6809 by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/52
+- chore(deps): update rust crate tokio to v1.54.1 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/51
+- chore(deps): update gcr.io/distroless/static:nonroot docker digest to d620678 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/49
+
 ## [v0.1.3](https://github.com/tailor-platform/ddflagd/compare/v0.1.2...v0.1.3) - 2026-10-15
 
 ### Other Changes
