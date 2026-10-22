@@ -1,6 +1,6 @@
 module github.com/tailor-platform/ddflagd
 
-go 1.27.2
+go 1.27.3
 
 require (
 	github.com/DataDog/dd-trace-go/v2 v2.11.2
