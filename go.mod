@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	github.com/DataDog/dd-trace-go/v2 v2.11.2
 	github.com/k1LoW/donegroup v1.10.4
-	github.com/open-feature/go-sdk v1.19.0
+	github.com/open-feature/go-sdk v1.20.0
 	github.com/pb33f/libopenapi v0.41.6
 	github.com/pb33f/libopenapi-validator v0.16.1
 	github.com/spf13/cobra v1.10.2
@@ -121,9 +121,9 @@ require (
 	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
