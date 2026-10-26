@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.1.5](https://github.com/tailor-platform/ddflagd/compare/v0.1.4...v0.1.5) - 2026-10-26
+
+### Other Changes
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/58
+
 ## [v0.1.4](https://github.com/tailor-platform/ddflagd/compare/v0.1.3...v0.1.4) - 2026-10-22
 
 ### Other Changes
