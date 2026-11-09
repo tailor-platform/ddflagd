@@ -3,7 +3,7 @@ module github.com/tailor-platform/ddflagd
 go 1.27.3
 
 require (
-	github.com/DataDog/dd-trace-go/v2 v2.11.2
+	github.com/DataDog/dd-trace-go/v2 v2.12.0
 	github.com/k1LoW/donegroup v1.10.4
 	github.com/open-feature/go-sdk v1.19.0
 	github.com/pb33f/libopenapi v0.41.6
