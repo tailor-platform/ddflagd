@@ -6,8 +6,8 @@ require (
 	github.com/DataDog/dd-trace-go/v2 v2.12.0
 	github.com/k1LoW/donegroup v1.10.4
 	github.com/open-feature/go-sdk v1.19.0
-	github.com/pb33f/libopenapi v0.41.6
-	github.com/pb33f/libopenapi-validator v0.16.1
+	github.com/pb33f/libopenapi v0.41.8
+	github.com/pb33f/libopenapi-validator v0.16.3
 	github.com/spf13/cobra v1.10.2
 	github.com/testcontainers/testcontainers-go v0.45.0
 )
@@ -33,7 +33,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/basgys/goxml2json v1.1.1-0.20231018121955-e66ee54ceaad // indirect
-	github.com/buger/jsonparser v1.1.2 // indirect
+	github.com/buger/jsonparser v1.6.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -79,7 +79,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/pb33f/go-yaml v0.1.1 // indirect
-	github.com/pb33f/jsonpath v0.8.4 // indirect
+	github.com/pb33f/jsonpath v0.8.5 // indirect
 	github.com/pb33f/jsonschema/v6 v6.0.3 // indirect
 	github.com/pb33f/ordered-map/v2 v2.3.2 // indirect
 	github.com/petermattis/goid v0.0.0-20260226131333-17d1149c6ac6 // indirect
@@ -120,7 +120,7 @@ require (
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20260529124908-c761662dc8c9 // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
