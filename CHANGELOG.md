@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.1.5](https://github.com/tailor-platform/ddflagd/compare/v0.1.4...v0.1.5) - 2026-11-11
+
+### Other Changes
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/58
+- chore(deps): update songmu/tagpr action to v1.22.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/53
+- fix(deps): update module github.com/testcontainers/testcontainers-go to v0.45.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/64
+- fix(deps): update module github.com/datadog/dd-trace-go/v2 to v2.12.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/63
+- chore(deps): update gcr.io/distroless/static:nonroot docker digest to 25ac8f0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/55
+- chore(deps): update docker/login-action action to v4.8.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/54
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/62
+- fix: move github.com/klauspost/compress to v1.20.2 for GO-2026-6865 by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/65
+- chore(deps): update golang docker tag to v1.27.4 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/66
+
 ## [v0.1.4](https://github.com/tailor-platform/ddflagd/compare/v0.1.3...v0.1.4) - 2026-10-22
 
 ### Other Changes
