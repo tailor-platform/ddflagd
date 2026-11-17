@@ -768,14 +768,13 @@ dependencies = [
 
 [[package]]
 name = "open-feature-ofrep"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45ccf2e0ac1ef2df96df89234c9ee58fa2307f784fd0af54bef2156c17bdb730"
+checksum = "defe1ad6209b131cedb08e856750dc7f9cca22d5787d866cf6461f71bdf2e5f0"
 dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
- "once_cell",
  "open-feature",
  "reqwest",
  "serde_json",
