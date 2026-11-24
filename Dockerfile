@@ -1,4 +1,4 @@
-FROM golang:1.27.4@sha256:08bcb99a38f85a265f9a93d1d3323e2440eec333380f3ea26ee0dec9264bb41c AS builder
+FROM golang:1.27.4@sha256:205c7636d74e0ffbe3d007162df7d74f859f5a8c8322dfb9f907977686c126cf AS builder
 
 WORKDIR /workdir/
 COPY . /workdir/
@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 
 # ddflagd needs neither a shell nor a certificate store: it talks to the local
 # Datadog Agent over plain HTTP or a Unix socket, and serves plain HTTP itself.
-FROM gcr.io/distroless/static:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329
+FROM gcr.io/distroless/static:nonroot@sha256:8ce6dd87e9823c5b48dcfb2c8604714ccb351ce59607327bcc4957448da279b5
 
 COPY --from=builder /ddflagd /ddflagd
 
