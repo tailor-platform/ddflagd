@@ -1,5 +1,31 @@
 # Changelog
 
+## [v0.1.5](https://github.com/tailor-platform/ddflagd/compare/v0.1.4...v0.1.5) - 2026-11-24
+
+### Other Changes
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/58
+- chore(deps): update songmu/tagpr action to v1.22.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/53
+- fix(deps): update module github.com/testcontainers/testcontainers-go to v0.45.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/64
+- fix(deps): update module github.com/datadog/dd-trace-go/v2 to v2.12.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/63
+- chore(deps): update gcr.io/distroless/static:nonroot docker digest to 25ac8f0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/55
+- chore(deps): update docker/login-action action to v4.8.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/54
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/62
+- fix: move github.com/klauspost/compress to v1.20.2 for GO-2026-6865 by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/65
+- chore(deps): update golang docker tag to v1.27.4 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/66
+- fix(deps): update module github.com/open-feature/go-sdk to v1.20.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/57
+- fix: bump go directive to 1.27.4 for net/http vulnerability by @k1LoW in https://github.com/tailor-platform/ddflagd/pull/76
+- chore(deps): update anchore/sbom-action action to v0.24.4 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/75
+- chore(deps): update actions/setup-go action to v7.1.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/73
+- chore(deps): update dtolnay/rust-toolchain digest to 3900882 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/71
+- chore(deps): update gcr.io/distroless/static:nonroot docker digest to 8ce6dd8 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/68
+- chore(deps): update golang:1.27.4 docker digest to 205c763 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/67
+- chore(deps): update module go.opentelemetry.io/otel/trace to v1.47.0 [security] by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/70
+- fix(deps): update module github.com/pb33f/libopenapi to v0.44.0 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/56
+- chore(deps): update rust crate open-feature-ofrep to v0.1.3 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/74
+- chore(deps): update module go.opentelemetry.io/otel/sdk to v1.47.0 [security] by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/69
+- fix(deps): update module github.com/pb33f/libopenapi-validator to v0.16.5 by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/61
+- chore(deps): lock file maintenance by @renovate[bot] in https://github.com/tailor-platform/ddflagd/pull/72
+
 ## [v0.1.4](https://github.com/tailor-platform/ddflagd/compare/v0.1.3...v0.1.4) - 2026-10-22
 
 ### Other Changes
