@@ -4,11 +4,11 @@
 //! ddflagd ships no Rust code, so these tests are about the official crates,
 //! not about this project's own code. They state the behavior a consuming
 //! application can rely on, including the rough edges of
-//! `open-feature-ofrep` 0.1: every reason comes back as STATIC, the flag
-//! metadata is dropped, and a code default is indistinguishable from a
-//! transport failure. Each of those is a deliberate trade-off in ddflagd's
-//! design, and pinning it here means a crate update that changes it is noticed
-//! here rather than in production.
+//! `open-feature-ofrep` 0.1: a code default still comes back as an error, and
+//! a server failure other than 400 and 404 is a general error that only names
+//! the status. Each of those is a deliberate trade-off in ddflagd's design, and
+//! pinning it here means a crate update that changes it is noticed here rather
+//! than in production.
 
 use std::env;
 use std::path::PathBuf;
@@ -18,7 +18,8 @@ use std::time::Duration;
 
 use open_feature::provider::FeatureProvider;
 use open_feature::{
-    EvaluationContext, EvaluationContextFieldValue, EvaluationErrorCode, EvaluationReason, Value,
+    EvaluationContext, EvaluationContextFieldValue, EvaluationErrorCode, EvaluationReason,
+    FlagMetadataValue, Value,
 };
 use open_feature_ofrep::{OfrepOptions, OfrepProvider};
 
@@ -159,13 +160,9 @@ async fn values_resolve_for_every_primitive_type() {
     );
 }
 
-/// The crate reports every reason as STATIC and drops the flag metadata.
-///
-/// ddflagd accepts this: an application needs the flag's value, and the
-/// telemetry that would use the allocation key is emitted by the official Go
-/// SDK inside the bridge, not by the caller.
+/// The crate carries the reason and the flag metadata of the response through.
 #[tokio::test]
-async fn the_reason_and_the_flag_metadata_are_not_carried_through() {
+async fn the_reason_and_the_flag_metadata_are_carried_through() {
     let stub = Stub::start();
     let provider = stub.provider().await;
     let ctx = context();
@@ -176,19 +173,22 @@ async fn the_reason_and_the_flag_metadata_are_not_carried_through() {
         .await
         .expect("resolving a boolean");
 
-    assert!(
-        matches!(details.reason, Some(EvaluationReason::Static)),
-        "open-feature-ofrep 0.1 reports every reason as STATIC, got {:?}",
-        details.reason
+    assert_eq!(details.reason, Some(EvaluationReason::TargetingMatch));
+    let metadata = details
+        .flag_metadata
+        .expect("the flag metadata is carried through");
+    assert_eq!(metadata.values.len(), 4, "got {metadata:?}");
+    assert_eq!(
+        metadata.values.get("dd.allocation.key"),
+        Some(&FlagMetadataValue::String("allocation-1".to_string()))
     );
-    assert!(
-        details.flag_metadata.is_none()
-            || details
-                .flag_metadata
-                .as_ref()
-                .is_some_and(|m| m.values.is_empty()),
-        "open-feature-ofrep 0.1 drops the flag metadata, got {:?}",
-        details.flag_metadata
+    assert_eq!(
+        metadata.values.get("dd.doLog"),
+        Some(&FlagMetadataValue::Bool(true))
+    );
+    assert_eq!(
+        metadata.values.get("dd.serialId"),
+        Some(&FlagMetadataValue::Int(7))
     );
 }
 
@@ -207,12 +207,12 @@ async fn a_code_default_is_an_error_the_caller_falls_back_from() {
             .expect_err("a valueless response must not resolve to a value");
         assert_eq!(
             err.code,
-            EvaluationErrorCode::ParseError,
-            "{flag}: open-feature-ofrep 0.1 reports a missing value as a parse error"
+            EvaluationErrorCode::General("Code default".to_string()),
+            "{flag}: open-feature-ofrep 0.1 reports a missing value as a general error"
         );
 
-        // This is the trade-off ddflagd accepts: the caller cannot tell a code
-        // default from a failure, so the share of evaluations that fell back is
+        // This is the trade-off ddflagd accepts: the caller only sees an error
+        // to fall back from, so the share of evaluations that fell back is
         // monitored on the bridge side instead.
         let value = provider.resolve_bool_value(flag, &ctx).await.ok();
         assert!(value.is_none(), "{flag} must not carry a value");
@@ -229,18 +229,30 @@ async fn failures_map_onto_error_codes() {
 
     let cases: Vec<(&str, EvaluationErrorCode)> = vec![
         // 404
-        ("flag-that-does-not-exist", EvaluationErrorCode::FlagNotFound),
-        // 400, all of which the crate collapses into InvalidContext
+        (
+            "flag-that-does-not-exist",
+            EvaluationErrorCode::FlagNotFound,
+        ),
+        // 400, which the crate tells apart by the error code in the body
         (
             "targeting-key-missing",
-            EvaluationErrorCode::InvalidContext,
+            EvaluationErrorCode::TargetingKeyMissing,
         ),
-        ("parse-error", EvaluationErrorCode::InvalidContext),
+        ("parse-error", EvaluationErrorCode::ParseError),
         ("invalid-context", EvaluationErrorCode::InvalidContext),
-        // 503, which the crate cannot tell from a malformed body
-        ("provider-not-ready", EvaluationErrorCode::ParseError),
-        // 500
-        ("general-error", EvaluationErrorCode::ParseError),
+        // 503 and 500, which the crate reports by status only
+        (
+            "provider-not-ready",
+            EvaluationErrorCode::General(
+                "Unexpected response status 503 Service Unavailable".to_string(),
+            ),
+        ),
+        (
+            "general-error",
+            EvaluationErrorCode::General(
+                "Unexpected response status 500 Internal Server Error".to_string(),
+            ),
+        ),
     ];
 
     for (flag, want) in cases {
@@ -264,7 +276,7 @@ async fn a_mismatched_type_is_an_error_on_the_caller_side() {
         .resolve_bool_value("value-string", &ctx)
         .await
         .expect_err("a string value must not resolve as a boolean");
-    assert_eq!(err.code, EvaluationErrorCode::ParseError);
+    assert_eq!(err.code, EvaluationErrorCode::TypeMismatch);
 }
 
 /// The bridge bounds the response time, because the crate has no overall
@@ -281,7 +293,12 @@ async fn the_bridge_bounds_a_stalled_evaluation() {
         .await
         .expect_err("a timed out evaluation must not resolve to a value");
 
-    assert_eq!(err.code, EvaluationErrorCode::ParseError);
+    assert_eq!(
+        err.code,
+        EvaluationErrorCode::General(
+            "Unexpected response status 503 Service Unavailable".to_string()
+        )
+    );
     assert!(
         started.elapsed() < Duration::from_secs(5),
         "the bridge did not bound the evaluation: it took {:?}",
@@ -304,10 +321,7 @@ async fn a_nested_context_field_is_sent_as_a_string() {
 
     let ctx = EvaluationContext::default()
         .with_targeting_key("alice")
-        .with_custom_field(
-            "user",
-            EvaluationContextFieldValue::new_struct(("id", "1")),
-        );
+        .with_custom_field("user", EvaluationContextFieldValue::new_struct(("id", "1")));
 
     // The bridge rejects a JSON object in the context with 400, which the crate
     // reports as InvalidContext. A nested field never reaches that path because
