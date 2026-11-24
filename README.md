@@ -184,7 +184,7 @@ One state has no probe behind it. If the configuration is withdrawn upstream rat
 | `ddflagd_provider_ready_timestamp_seconds` | gauge | |
 | `ddflagd_build_info` | gauge | `version`, `dd_trace_go_version` |
 
-`outcome` is the metric that matters. A caller cannot tell a deliberate code default from a failure, because `open-feature-ofrep` 0.1 reports both as an error, so the share of evaluations that fell back is monitored here rather than in the application.
+`outcome` is the metric that matters. A caller only sees an error to fall back from for both a deliberate code default and a failure, because `open-feature-ofrep` 0.1 reports both as an error, so the share of evaluations that fell back is monitored here rather than in the application.
 
 Configuration freshness is not exposed. The official provider keeps its configuration private and emits no events, so ddflagd cannot observe it; watch the Agent's Remote Configuration state and the Feature Flags UI instead.
 
